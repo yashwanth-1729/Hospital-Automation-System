@@ -54,6 +54,11 @@ export function formatDateTime(d: Date | string | null | undefined): string {
   return `${dayMonthYear!.split(" ").slice(0, 2).join(" ")}, ${time}`;
 }
 
+/** Patient-facing date only, e.g. 'Fri, 25 Sep 2026'. */
+export function formatDateOnly(date: string): string {
+  return formatSlot(istAt(date, 12)).split(", ").slice(0, 2).join(", ");
+}
+
 export function isValidDateString(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const d = new Date(`${s}T00:00:00Z`);

@@ -88,3 +88,10 @@ describe("staff timestamps", () => {
     expect(formatDateTime(null)).toBe("—");
   });
 });
+
+describe("patient-facing dates", () => {
+  it("formats a date string for messages", async () => {
+    const { formatDateOnly } = await import("@/lib/time");
+    expect(formatDateOnly("2026-09-25")).toBe("Fri, 25 Sep 2026");
+  });
+});

@@ -22,7 +22,9 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           <NavLink href="/">Dashboard</NavLink>
           <NavLink href="/leads">Leads</NavLink>
           <NavLink href="/appointments">Appointments</NavLink>
+          <NavLink href="/discharges">Discharges</NavLink>
           <NavLink href="/follow-ups">Follow-ups</NavLink>
+          <NavLink href="/feedback">Feedback</NavLink>
           <NavLink href="/exceptions" badge={stats?.exceptions_high}>Exceptions</NavLink>
           <NavLink href="/phone">Demo phone</NavLink>
           <a href="/enquiry" target="_blank" className="rounded-lg px-3 py-2 text-sm whitespace-nowrap text-muted hover:bg-surface-2 hover:text-text">

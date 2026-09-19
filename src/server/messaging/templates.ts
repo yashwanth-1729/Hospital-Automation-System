@@ -58,6 +58,32 @@ export const TEMPLATES = {
       `Hello ${v.patient_name}, this is a gentle follow-up from ${v.hospital_name} about your missed appointment. ` +
       `If you would still like to visit, call ${v.hospital_contact} and we will book a convenient time for you.`,
   },
+  DISCHARGE_FOLLOWUP_01: {
+    providerName: "discharge_followup_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "followup_date", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, thank you for choosing ${v.hospital_name}. ` +
+      `Your care team has scheduled a follow-up visit on ${v.followup_date}. ` +
+      `To confirm or change the time, call ${v.hospital_contact}. ` +
+      `Please continue to follow the instructions given to you at discharge.`,
+  },
+  FOLLOWUP_REMINDER_01: {
+    providerName: "followup_reminder_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "followup_date", "hospital_contact"],
+    render: (v) =>
+      `Reminder: ${v.patient_name}, your follow-up visit at ${v.hospital_name} is scheduled for ${v.followup_date}. ` +
+      `To confirm a time or reschedule, call ${v.hospital_contact}.`,
+  },
+  FEEDBACK_REQUEST_01: {
+    providerName: "feedback_request_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "feedback_link"],
+    render: (v) =>
+      `Hello ${v.patient_name}, we hope you are recovering well. ` +
+      `Could you rate your recent experience at ${v.hospital_name}? It takes less than a minute: ${v.feedback_link}`,
+  },
   APPT_REMINDER_01: {
     providerName: "appt_reminder_01",
     category: "utility",

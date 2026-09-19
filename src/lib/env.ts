@@ -28,6 +28,14 @@ const EnvSchema = z.object({
   NO_SHOW_FOLLOWUP_HOURS: z.coerce.number().int().min(1).default(24),
   NO_SHOW_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(2),
 
+  // --- Discharge follow-up & feedback ---
+  FEEDBACK_DELAY_HOURS: z.coerce.number().int().min(0).default(48),
+  FEEDBACK_LINK_VALID_DAYS: z.coerce.number().int().min(1).default(30),
+  // IST hour at which the day-before follow-up reminder is sent.
+  FOLLOWUP_REMINDER_HOUR: z.coerce.number().int().min(0).max(23).default(10),
+  // Base URL used in patient links (feedback form).
+  PUBLIC_BASE_URL: z.string().url().default("http://localhost:3000"),
+
   WEBHOOK_SECRET: optionalString,
   DASHBOARD_PASSWORD: optionalString,
 });

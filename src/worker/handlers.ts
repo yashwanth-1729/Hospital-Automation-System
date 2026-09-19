@@ -6,6 +6,7 @@ import { sendAppointmentConfirmation, sendAppointmentReminder } from "@/server/w
 import { JOB } from "@/server/workflows/job-types";
 import { processLead } from "@/server/workflows/lead-intake";
 import { escalateNoShow, recoverNoShow } from "@/server/workflows/no-show";
+import { processDischarge, requestFeedback, sendDischargeReminder } from "@/server/workflows/discharge";
 
 /** Thrown for failures that will never succeed on retry (bad payload, unknown job type). */
 export class PermanentJobError extends Error {
@@ -47,6 +48,18 @@ const handlers: Record<string, (payload: unknown, ctx: JobContext) => Promise<vo
   [JOB.noShowEscalate]: async (payload) => {
     const p = parse(z.object({ appointment_id: z.string(), attempt: z.number().int().min(1) }), payload);
     await escalateNoShow(p.appointment_id, p.attempt);
+  },
+  [JOB.dischargeProcess]: async (payload) => {
+    const { discharge_id } = parse(z.object({ discharge_id: z.string() }), payload);
+    await processDischarge(discharge_id);
+  },
+  [JOB.dischargeReminder]: async (payload) => {
+    const p = parse(z.object({ discharge_id: z.string(), followup_date: z.string() }), payload);
+    await sendDischargeReminder(p.discharge_id, p.followup_date);
+  },
+  [JOB.feedbackRequest]: async (payload) => {
+    const { discharge_id } = parse(z.object({ discharge_id: z.string() }), payload);
+    await requestFeedback(discharge_id);
   },
   [JOB.messageSend]: async (payload, ctx) => {
     const p = parse(

@@ -22,10 +22,14 @@ npm run dev:all               # web app on http://localhost:3000 + background wo
 | `/enquiry` | Public patient form for the fictional *DemoCare Multispeciality Hospital* |
 | `/` | Staff dashboard (live) |
 | `/leads/<id>` | Full automation timeline for one enquiry |
+| `/discharges` | Record a discharge and watch post-discharge coordination |
 | `/follow-ups` | Patients being chased after a missed appointment, with recovery KPIs |
+| `/feedback` | Patient ratings, satisfaction stats and service-recovery queue |
+| `/r/<token>` | One-time patient feedback link (public, sent by WhatsApp) |
 | `/exceptions` | Work queue: everything the system would not decide on its own |
 | `/phone` | Demo phone showing the WhatsApp messages patients would receive |
 | `POST /api/webhooks/lead` | Intake for external sources (Tally, website, Meta lead ads) |
+| `POST /api/webhooks/discharge` | Discharge event from the hospital's HMS |
 | `GET /api/health` | Health check for uptime monitoring |
 
 ## How it works
@@ -103,6 +107,16 @@ reports attendance). The patient then gets a reschedule message with real open s
 and after `NO_SHOW_FOLLOWUP_HOURS` the system tries again up to `NO_SHOW_MAX_ATTEMPTS` before handing the
 patient to a person. Set `NO_SHOW_RECOVERY_DELAY_MINUTES=0` for live demos so the message appears instantly.
 
+### Discharge follow-up and feedback
+
+A discharge arrives from the HMS webhook or the staff form. **The follow-up date must come from the hospital
+and name the clinician who approved it** - the system never infers one. Without an approved date the discharge
+is queued for the department instead of promising the patient anything.
+
+The patient then gets the approved date, a reminder the day before, and a feedback link
+`FEEDBACK_DELAY_HOURS` after discharge (set `0` for live demos). A rating of 3 or below immediately opens a
+service-recovery task and an exception. No clinical content is ever stored or sent.
+
 ### Security
 
 - `WEBHOOK_SECRET`: when set, the webhook requires header `x-webhook-secret`.
@@ -127,4 +141,4 @@ Note: the Docker setup has not yet been run on a machine with Docker installed; 
 |---|---|
 | Demo 1: Lead → AI classification → availability → booking → confirmation → reminders | Done |
 | Demo 2: No-show → recovery message → follow-up task → staff escalation | Done |
-| Demo 3: Discharge → approved follow-up → reminder → feedback → service recovery | Next |
+| Demo 3: Discharge → approved follow-up → reminder → feedback → service recovery | Done |

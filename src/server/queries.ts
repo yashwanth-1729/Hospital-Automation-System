@@ -281,3 +281,82 @@ export async function getNoShowStats(): Promise<NoShowStats> {
   const seen = r.no_shows_7d + r.attended_7d;
   return { ...r, no_show_rate_7d: seen > 0 ? Math.round((r.no_shows_7d / seen) * 100) : null };
 }
+
+export interface DischargeListRow {
+  discharge_id: string;
+  patient_name: string;
+  phone: string;
+  encounter_id: string | null;
+  department: string | null;
+  discharged_at: Date;
+  approved_followup_date: string | null;
+  approved_followup_window: string | null;
+  approved_by: string | null;
+  status: string;
+  source: string;
+  correlation_id: string;
+  feedback_rating: number | null;
+  followup_status: string | null;
+}
+
+export async function listDischarges(): Promise<DischargeListRow[]> {
+  return many<DischargeListRow>(
+    pool(),
+    `SELECT d.discharge_id, p.full_name AS patient_name, p.phone, d.encounter_id, dep.name AS department,
+            d.discharged_at, d.approved_followup_date, d.approved_followup_window, d.approved_by, d.status,
+            d.source, d.correlation_id, f.rating AS feedback_rating, fu.status AS followup_status
+     FROM discharges d
+     JOIN patients p USING (patient_id)
+     LEFT JOIN departments dep ON dep.department_id = d.department_id
+     LEFT JOIN feedback f ON f.discharge_id = d.discharge_id
+     LEFT JOIN follow_ups fu ON fu.discharge_id = d.discharge_id AND fu.category = 'post_discharge'
+     ORDER BY d.discharged_at DESC
+     LIMIT 200`,
+  );
+}
+
+export interface FeedbackListRow {
+  feedback_id: string;
+  patient_name: string;
+  rating: number;
+  comment: string | null;
+  created_at: Date;
+  department: string | null;
+  discharge_id: string | null;
+}
+
+export async function listFeedback(): Promise<FeedbackListRow[]> {
+  return many<FeedbackListRow>(
+    pool(),
+    `SELECT f.feedback_id, p.full_name AS patient_name, f.rating, f.comment, f.created_at,
+            dep.name AS department, f.discharge_id
+     FROM feedback f
+     JOIN patients p USING (patient_id)
+     LEFT JOIN discharges d ON d.discharge_id = f.discharge_id
+     LEFT JOIN departments dep ON dep.department_id = d.department_id
+     ORDER BY f.created_at DESC
+     LIMIT 200`,
+  );
+}
+
+export interface FeedbackStats {
+  responses: number;
+  requests_sent: number;
+  average_rating: number | null;
+  promoters: number;
+  detractors: number;
+  service_recovery_open: number;
+}
+
+export async function getFeedbackStats(): Promise<FeedbackStats> {
+  const r = (await one<Omit<FeedbackStats, "average_rating"> & { average_rating: string | null }>(
+    pool(),
+    `SELECT (SELECT count(*) FROM feedback)::int AS responses,
+            (SELECT count(*) FROM feedback_requests)::int AS requests_sent,
+            (SELECT round(avg(rating), 1) FROM feedback) AS average_rating,
+            (SELECT count(*) FROM feedback WHERE rating >= 4)::int AS promoters,
+            (SELECT count(*) FROM feedback WHERE rating <= 3)::int AS detractors,
+            (SELECT count(*) FROM follow_ups WHERE category = 'service_recovery' AND status = 'open')::int AS service_recovery_open`,
+  ))!;
+  return { ...r, average_rating: r.average_rating === null ? null : Number(r.average_rating) };
+}
