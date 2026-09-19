@@ -3,6 +3,7 @@ import { pool } from "@/lib/db";
 import { raiseException } from "@/lib/exceptions";
 import { claimJobs, completeJob, failJob, reapStaleJobs, type Job } from "@/lib/jobs";
 import { MessagingError } from "@/server/messaging/providers";
+import { sweepNoShows } from "@/server/workflows/no-show";
 import { TemplateError } from "@/server/messaging/templates";
 import { getHandler, PermanentJobError } from "./handlers";
 
@@ -65,6 +66,21 @@ export async function drain(workerId = "drain", maxRounds = 50): Promise<number>
     total += n;
   }
   return total;
+}
+
+/**
+ * Periodic scan for missed appointments. An advisory lock keeps exactly one worker
+ * sweeping at a time; the sweep itself is idempotent either way.
+ */
+export async function sweepOnce(): Promise<string[]> {
+  const db = pool();
+  const lock = await db.query<{ locked: boolean }>(`SELECT pg_try_advisory_lock(hashtext('noshow_sweep')) AS locked`);
+  if (!lock.rows[0]?.locked) return [];
+  try {
+    return await sweepNoShows();
+  } finally {
+    await db.query(`SELECT pg_advisory_unlock(hashtext('noshow_sweep'))`);
+  }
 }
 
 export async function heartbeat(workerId: string, info: Record<string, unknown>) {

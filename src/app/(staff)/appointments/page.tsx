@@ -5,6 +5,7 @@ import { Badge, Card, Empty, PageHeader, Td, Th } from "@/components/ui";
 import { maskPhone } from "@/lib/phone";
 import { formatDateTime, formatSlot } from "@/lib/time";
 import { listAppointments } from "@/server/queries";
+import { markAttendanceAction } from "./actions";
 
 export const metadata = { title: "Appointments" };
 
@@ -15,7 +16,7 @@ export default async function AppointmentsPage() {
   return (
     <>
       <AutoRefresh seconds={10} />
-      <PageHeader title="Appointments" description="Booked by the automation. Reminders go out 24 hours and 3 hours before each visit." />
+      <PageHeader title="Appointments" description="Booked by the automation. Reminders go out 24 hours and 3 hours before each visit; a missed visit starts the recovery workflow." />
       <Card>
         {appts.length === 0 ? (
           <Empty>No appointments booked yet.</Empty>
@@ -28,6 +29,7 @@ export default async function AppointmentsPage() {
                   <Th>Patient</Th>
                   <Th>Doctor</Th>
                   <Th>Status</Th>
+                  <Th>Attendance</Th>
                   <Th>Reminders</Th>
                 </tr>
               </thead>
@@ -51,6 +53,27 @@ export default async function AppointmentsPage() {
                       <Badge tone={a.status === "booked" ? "ok" : "neutral"}>{a.status}</Badge>{" "}
                       {a.attendance_status !== "pending" && (
                         <Badge tone={a.attendance_status === "no_show" ? "danger" : "ok"}>{a.attendance_status.replace("_", "-")}</Badge>
+                      )}
+                    </Td>
+                    <Td>
+                      {a.status === "booked" && (
+                        <form action={markAttendanceAction} className="flex gap-1.5">
+                          <input type="hidden" name="appointment_id" value={a.appointment_id} />
+                          {a.attendance_status === "pending" ? (
+                            <>
+                              <button name="attendance" value="attended" className="rounded-lg border border-border px-2 py-1 text-xs hover:border-ok hover:text-ok">
+                                Attended
+                              </button>
+                              <button name="attendance" value="no_show" className="rounded-lg border border-border px-2 py-1 text-xs hover:border-danger hover:text-danger">
+                                No-show
+                              </button>
+                            </>
+                          ) : (
+                            <button name="attendance" value="pending" className="rounded-lg border border-border px-2 py-1 text-xs text-muted hover:text-text">
+                              Undo
+                            </button>
+                          )}
+                        </form>
                       )}
                     </Td>
                     <Td className="text-xs text-muted">

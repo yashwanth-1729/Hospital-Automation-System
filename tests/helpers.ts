@@ -26,8 +26,10 @@ export async function addSlot(doctorId: string, date: string, hour: number, minu
   const doc = DEMO_DOCTORS.find((d) => d.id === doctorId)!;
   const start = istAt(date, hour, minute);
   const slotId = `SLOT-T-${doctorId}-${date}-${hour}${minute}`;
+  // Re-adding the same slot in one test is a no-op, not an error.
   await pool().query(
-    `INSERT INTO slots (slot_id, doctor_id, department_id, slot_start, slot_end) VALUES ($1, $2, $3, $4, $5)`,
+    `INSERT INTO slots (slot_id, doctor_id, department_id, slot_start, slot_end) VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (doctor_id, slot_start) DO NOTHING`,
     [slotId, doctorId, doc.dept, start, new Date(start.getTime() + 30 * 60_000)],
   );
   return slotId;

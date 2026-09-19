@@ -224,3 +224,60 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     return { database: false, worker_last_seen: null, worker_online: false, jobs_queued: 0, jobs_dead: 0 };
   }
 }
+
+export interface FollowUpRow {
+  followup_id: string;
+  patient_name: string;
+  phone: string;
+  category: string;
+  status: string;
+  owner: string | null;
+  attempt_count: number;
+  next_action_at: Date | null;
+  notes: string | null;
+  created_at: Date;
+  appointment_id: string | null;
+  lead_id: string | null;
+  missed_slot: Date | null;
+}
+
+export async function listFollowUps(status: "open" | "closed"): Promise<FollowUpRow[]> {
+  return many<FollowUpRow>(
+    pool(),
+    `SELECT f.followup_id, p.full_name AS patient_name, p.phone, f.category, f.status, f.owner, f.attempt_count,
+            f.next_action_at, f.notes, f.created_at, f.appointment_id, a.lead_id, a.slot_start AS missed_slot
+     FROM follow_ups f
+     JOIN patients p USING (patient_id)
+     LEFT JOIN appointments a ON a.appointment_id = f.appointment_id
+     WHERE ($1 = 'open' AND f.status = 'open') OR ($1 = 'closed' AND f.status <> 'open')
+     ORDER BY f.next_action_at NULLS LAST, f.created_at DESC
+     LIMIT 200`,
+    [status],
+  );
+}
+
+export interface NoShowStats {
+  no_shows_7d: number;
+  recovered_7d: number;
+  recovery_open: number;
+  attended_7d: number;
+  no_show_rate_7d: number | null;
+}
+
+/** Recovery KPI from the blueprint: recovered appointments / eligible no-shows. */
+export async function getNoShowStats(): Promise<NoShowStats> {
+  const r = (await one<NoShowStats>(
+    pool(),
+    `SELECT
+       (SELECT count(*) FROM appointments
+         WHERE attendance_status = 'no_show' AND attendance_marked_at > now() - interval '7 days')::int AS no_shows_7d,
+       (SELECT count(*) FROM follow_ups
+         WHERE category = 'no_show_recovery' AND status = 'done' AND updated_at > now() - interval '7 days')::int AS recovered_7d,
+       (SELECT count(*) FROM follow_ups WHERE category = 'no_show_recovery' AND status = 'open')::int AS recovery_open,
+       (SELECT count(*) FROM appointments
+         WHERE attendance_status = 'attended' AND attendance_marked_at > now() - interval '7 days')::int AS attended_7d,
+       NULL::numeric AS no_show_rate_7d`,
+  ))!;
+  const seen = r.no_shows_7d + r.attended_7d;
+  return { ...r, no_show_rate_7d: seen > 0 ? Math.round((r.no_shows_7d / seen) * 100) : null };
+}

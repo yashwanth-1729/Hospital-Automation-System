@@ -22,6 +22,7 @@ npm run dev:all               # web app on http://localhost:3000 + background wo
 | `/enquiry` | Public patient form for the fictional *DemoCare Multispeciality Hospital* |
 | `/` | Staff dashboard (live) |
 | `/leads/<id>` | Full automation timeline for one enquiry |
+| `/follow-ups` | Patients being chased after a missed appointment, with recovery KPIs |
 | `/exceptions` | Work queue: everything the system would not decide on its own |
 | `/phone` | Demo phone showing the WhatsApp messages patients would receive |
 | `POST /api/webhooks/lead` | Intake for external sources (Tally, website, Meta lead ads) |
@@ -60,6 +61,8 @@ Everything runs on Postgres. There is no n8n/Make dependency: the job queue is a
 - **Consent respected.** No WhatsApp message without consent; staff get a task to call instead.
 - **Nothing fails silently.** Failed jobs retry with backoff, then open an exception with an owner and due time.
 - **Full audit trail.** Every step is logged with actor (patient / system / ai / staff) and correlation ID.
+- **No pointless chasing.** Recovery stops the moment a patient rebooks or staff correct the attendance,
+  and reminders for a missed visit are cancelled.
 
 ## Configuration
 
@@ -92,6 +95,14 @@ templates in `src/server/messaging/templates.ts` (names like `appt_confirm_01`) 
 
 In mock mode, phone numbers ending in `0000` simulate a provider rejection, to demo the failure path.
 
+### No-show recovery
+
+A missed visit is detected either from staff marking attendance or automatically,
+`NO_SHOW_GRACE_MINUTES` after the visit ended (`NO_SHOW_AUTO_DETECT=false` for hospitals whose HMS
+reports attendance). The patient then gets a reschedule message with real open slots, reception gets a task,
+and after `NO_SHOW_FOLLOWUP_HOURS` the system tries again up to `NO_SHOW_MAX_ATTEMPTS` before handing the
+patient to a person. Set `NO_SHOW_RECOVERY_DELAY_MINUTES=0` for live demos so the message appears instantly.
+
 ### Security
 
 - `WEBHOOK_SECRET`: when set, the webhook requires header `x-webhook-secret`.
@@ -115,5 +126,5 @@ Note: the Docker setup has not yet been run on a machine with Docker installed; 
 | Blueprint demo | Status |
 |---|---|
 | Demo 1: Lead → AI classification → availability → booking → confirmation → reminders | Done |
-| Demo 2: No-show → recovery message → follow-up task | Next |
+| Demo 2: No-show → recovery message → follow-up task → staff escalation | Done |
 | Demo 3: Discharge → approved follow-up → reminder → feedback → service recovery | Next |

@@ -21,6 +21,13 @@ const EnvSchema = z.object({
   WA_API_VERSION: z.string().default("v23.0"),
   WA_TEMPLATE_LANGUAGE: z.string().default("en"),
 
+  // --- No-show recovery ---
+  NO_SHOW_AUTO_DETECT: z.stringbool().default(true),
+  NO_SHOW_GRACE_MINUTES: z.coerce.number().int().min(0).default(60),
+  NO_SHOW_RECOVERY_DELAY_MINUTES: z.coerce.number().int().min(0).default(30),
+  NO_SHOW_FOLLOWUP_HOURS: z.coerce.number().int().min(1).default(24),
+  NO_SHOW_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(2),
+
   WEBHOOK_SECRET: optionalString,
   DASHBOARD_PASSWORD: optionalString,
 });

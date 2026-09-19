@@ -2,11 +2,12 @@ import "@/lib/load-env";
 import { hostname } from "node:os";
 import { closePool, pool } from "@/lib/db";
 import { env } from "@/lib/env";
-import { heartbeat, reapStaleJobs, runOnce } from "./runner";
+import { heartbeat, reapStaleJobs, runOnce, sweepOnce } from "./runner";
 
 const POLL_MS = 1000;
 const HEARTBEAT_MS = 10_000;
 const REAP_MS = 60_000;
+const SWEEP_MS = 60_000;
 
 const workerId = `${hostname()}:${process.pid}`;
 let stopping = false;
@@ -23,6 +24,7 @@ async function main() {
   const info = { ai: e.AI_PROVIDER, messaging: e.MESSAGING_PROVIDER, pid: process.pid };
   let lastHeartbeat = 0;
   let lastReap = 0;
+  let lastSweep = 0;
 
   while (!stopping) {
     const now = Date.now();
@@ -35,6 +37,11 @@ async function main() {
         const n = await reapStaleJobs(pool());
         if (n) log("requeued stale jobs", { count: n });
         lastReap = now;
+      }
+      if (now - lastSweep > SWEEP_MS) {
+        const missed = await sweepOnce();
+        if (missed.length) log("marked no-shows", { count: missed.length });
+        lastSweep = now;
       }
       const ran = await runOnce(workerId);
       if (ran > 0) {

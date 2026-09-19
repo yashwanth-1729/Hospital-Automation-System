@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { AutoRefresh } from "@/components/client";
 import { Card, Empty, LeadStatus, Mono, PageHeader, Severity, Stat, Td, Th } from "@/components/ui";
 import { formatDateTime } from "@/lib/time";
-import { getDashboardStats, listExceptions, listLeads } from "@/server/queries";
+import { getDashboardStats, getNoShowStats, listExceptions, listLeads } from "@/server/queries";
 
 export const metadata = { title: "Dashboard" };
 
@@ -16,7 +16,12 @@ function formatDuration(seconds: number | null): string {
 
 export default async function DashboardPage() {
   await connection();
-  const [stats, leads, exceptions] = await Promise.all([getDashboardStats(), listLeads({ limit: 8 }), listExceptions("open")]);
+  const [stats, noShow, leads, exceptions] = await Promise.all([
+    getDashboardStats(),
+    getNoShowStats(),
+    listLeads({ limit: 8 }),
+    listExceptions("open"),
+  ]);
 
   return (
     <>
@@ -34,6 +39,13 @@ export default async function DashboardPage() {
           href="/exceptions"
         />
         <Stat label="First response" value={formatDuration(stats.avg_first_response_seconds)} hint="average, today" tone="primary" />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="No-shows (7 days)" value={noShow.no_shows_7d} tone={noShow.no_shows_7d ? "warn" : "neutral"} href="/follow-ups" />
+        <Stat label="Recovered" value={noShow.recovered_7d} tone="ok" hint="rebooked after a miss" href="/follow-ups" />
+        <Stat label="Being chased" value={noShow.recovery_open} hint="automated follow-up running" href="/follow-ups" />
+        <Stat label="No-show rate" value={noShow.no_show_rate_7d === null ? "—" : `${noShow.no_show_rate_7d}%`} hint="last 7 days" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-5">

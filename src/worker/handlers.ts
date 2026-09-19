@@ -5,6 +5,7 @@ import { sendTemplateMessage } from "@/server/messaging/send";
 import { sendAppointmentConfirmation, sendAppointmentReminder } from "@/server/workflows/appointment";
 import { JOB } from "@/server/workflows/job-types";
 import { processLead } from "@/server/workflows/lead-intake";
+import { escalateNoShow, recoverNoShow } from "@/server/workflows/no-show";
 
 /** Thrown for failures that will never succeed on retry (bad payload, unknown job type). */
 export class PermanentJobError extends Error {
@@ -38,6 +39,14 @@ const handlers: Record<string, (payload: unknown, ctx: JobContext) => Promise<vo
   [JOB.appointmentReminder]: async (payload) => {
     const p = parse(z.object({ appointment_id: z.string(), stage: z.enum(["24h", "3h"]), slot_start: z.string() }), payload);
     await sendAppointmentReminder(p.appointment_id, p.stage, p.slot_start);
+  },
+  [JOB.noShowRecover]: async (payload) => {
+    const { appointment_id } = parse(z.object({ appointment_id: z.string() }), payload);
+    await recoverNoShow(appointment_id);
+  },
+  [JOB.noShowEscalate]: async (payload) => {
+    const p = parse(z.object({ appointment_id: z.string(), attempt: z.number().int().min(1) }), payload);
+    await escalateNoShow(p.appointment_id, p.attempt);
   },
   [JOB.messageSend]: async (payload, ctx) => {
     const p = parse(
