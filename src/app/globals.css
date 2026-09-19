@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/* Design tokens. Calm clinical palette: slate neutrals, teal primary, semantic status colours. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --border: #e3e6eb;
+  --text: #16202c;
+  --muted: #5f6b7a;
+  --primary: #0f766e;
+  --primary-soft: #e6f4f2;
+  --ok: #15803d;
+  --ok-soft: #e8f6ec;
+  --warn: #b45309;
+  --warn-soft: #fdf3e3;
+  --danger: #b91c1c;
+  --danger-soft: #fdecec;
+  --info: #1d4ed8;
+  --info-soft: #e9effd;
+  --wa-bg: #efeae2;
+  --wa-bubble: #ffffff;
+  --wa-header: #075e54;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1319;
+    --surface: #151c24;
+    --surface-2: #1b242e;
+    --border: #273240;
+    --text: #e6ebf1;
+    --muted: #93a0b0;
+    --primary: #2dd4bf;
+    --primary-soft: #11302d;
+    --ok: #4ade80;
+    --ok-soft: #10281a;
+    --warn: #fbbf24;
+    --warn-soft: #2d2410;
+    --danger: #f87171;
+    --danger-soft: #331616;
+    --info: #93b4fd;
+    --info-soft: #172240;
+    --wa-bg: #0b141a;
+    --wa-bubble: #1f2c34;
+    --wa-header: #1f2c34;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-wa-bg: var(--wa-bg);
+  --color-wa-bubble: var(--wa-bubble);
+  --color-wa-header: var(--wa-header);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numbers keep KPI digits aligned while values refresh. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
