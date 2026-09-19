@@ -41,6 +41,23 @@ export const TEMPLATES = {
       `Department: ${v.department}\nDoctor: ${v.doctor_name}\nDate & time: ${v.slot}\nBooking ID: ${v.appointment_id}\n` +
       `Please arrive 15 minutes early. To reschedule or cancel, call ${v.hospital_contact}.`,
   },
+  APPT_RESCHEDULED_01: {
+    providerName: "appt_rescheduled_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "department", "doctor_name", "slot", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, your appointment at ${v.hospital_name} has been rescheduled.\n` +
+      `Department: ${v.department}\nDoctor: ${v.doctor_name}\nNew date & time: ${v.slot}\n` +
+      `If this time does not suit you, call ${v.hospital_contact}.`,
+  },
+  APPT_CANCELLED_01: {
+    providerName: "appt_cancelled_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "slot", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, your appointment at ${v.hospital_name} on ${v.slot} has been cancelled. ` +
+      `To book a new time, call ${v.hospital_contact}.`,
+  },
   NOSHOW_RECOVERY_01: {
     providerName: "noshow_recovery_01",
     category: "utility",

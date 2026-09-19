@@ -4,14 +4,27 @@ import { AutoRefresh } from "@/components/client";
 import { Badge, Card, Empty, PageHeader, Td, Th } from "@/components/ui";
 import { maskPhone } from "@/lib/phone";
 import { formatDateTime, formatSlot } from "@/lib/time";
-import { listAppointments } from "@/server/queries";
+import { listAppointments, listDepartments } from "@/server/queries";
+import { listOpenSlots } from "@/server/workflows/scheduling";
+import { formatSlot as slotLabel } from "@/lib/time";
 import { markAttendanceAction } from "./actions";
+import { RowActions, type SlotOption } from "./row-actions";
 
 export const metadata = { title: "Appointments" };
 
 export default async function AppointmentsPage() {
   await connection();
-  const appts = await listAppointments();
+  const [appts, departments] = await Promise.all([listAppointments(), listDepartments()]);
+
+  // Open slots per department, so each row's reschedule picker is ready without another round trip.
+  const slotsByDepartment = new Map<string, SlotOption[]>(
+    await Promise.all(
+      departments.map(async (d) => {
+        const slots = await listOpenSlots(d.department_id, 12);
+        return [d.name, slots.map((s) => ({ slot_id: s.slot_id, label: `${slotLabel(s.slot_start)} · ${s.doctor_name}` }))] as const;
+      }),
+    ),
+  );
 
   return (
     <>
@@ -30,6 +43,7 @@ export default async function AppointmentsPage() {
                   <Th>Doctor</Th>
                   <Th>Status</Th>
                   <Th>Attendance</Th>
+                  <Th>Actions</Th>
                   <Th>Reminders</Th>
                 </tr>
               </thead>
@@ -74,6 +88,11 @@ export default async function AppointmentsPage() {
                             </button>
                           )}
                         </form>
+                      )}
+                    </Td>
+                    <Td>
+                      {a.status === "booked" && a.attendance_status === "pending" && (
+                        <RowActions appointmentId={a.appointment_id} slots={slotsByDepartment.get(a.department) ?? []} />
                       )}
                     </Td>
                     <Td className="text-xs text-muted">

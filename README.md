@@ -25,6 +25,7 @@ npm run dev:all               # web app on http://localhost:3000 + background wo
 | `/discharges` | Record a discharge and watch post-discharge coordination |
 | `/follow-ups` | Patients being chased after a missed appointment, with recovery KPIs |
 | `/feedback` | Patient ratings, satisfaction stats and service-recovery queue |
+| `/reports` | Management report: funnel, conversion, response times, department and source performance |
 | `/r/<token>` | One-time patient feedback link (public, sent by WhatsApp) |
 | `/exceptions` | Work queue: everything the system would not decide on its own |
 | `/phone` | Demo phone showing the WhatsApp messages patients would receive |
@@ -65,6 +66,8 @@ Everything runs on Postgres. There is no n8n/Make dependency: the job queue is a
 - **Consent respected.** No WhatsApp message without consent; staff get a task to call instead.
 - **Nothing fails silently.** Failed jobs retry with backoff, then open an exception with an owner and due time.
 - **Full audit trail.** Every step is logged with actor (patient / system / ai / staff) and correlation ID.
+- **Cancelled slots are reusable.** Cancelling frees the slot immediately, stops reminders and recovery,
+  and tells the patient; a cancelled appointment never blocks that slot or that lead again.
 - **No pointless chasing.** Recovery stops the moment a patient rebooks or staff correct the attendance,
   and reminders for a missed visit are cancelled.
 
@@ -116,6 +119,15 @@ is queued for the department instead of promising the patient anything.
 The patient then gets the approved date, a reminder the day before, and a feedback link
 `FEEDBACK_DELAY_HOURS` after discharge (set `0` for live demos). A rating of 3 or below immediately opens a
 service-recovery task and an exception. No clinical content is ever stored or sent.
+
+### Management report and daily summary
+
+`/reports` answers the questions an HMS cannot: how fast enquiries were answered, how many converted,
+which source and department they came from, how many needed a person, and whether the automation itself is healthy.
+
+The daily summary is written from **aggregate numbers only** - no names, phone numbers, enquiry text or
+clinical data ever reach the AI provider. Without an AI provider (or if it fails) a deterministic summary is
+generated from the same numbers.
 
 ### Security
 

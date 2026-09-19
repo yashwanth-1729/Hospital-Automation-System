@@ -4,7 +4,10 @@ import { connection } from "next/server";
 import { AutoRefresh } from "@/components/client";
 import { Badge, Card, Empty, LeadStatus, MessageStatus, Mono, PageHeader } from "@/components/ui";
 import { formatDateTime, formatSlot } from "@/lib/time";
-import { getLead, getTimeline, listMessages } from "@/server/queries";
+import { resolveDepartment } from "@/server/ai/rules";
+import { getLead, getTimeline, listDepartments, listMessages } from "@/server/queries";
+import { listOpenSlots } from "@/server/workflows/scheduling";
+import { BookLead, type DepartmentSlots } from "./book";
 
 export const metadata = { title: "Lead" };
 
@@ -19,6 +22,14 @@ const ACTION_LABELS: Record<string, string> = {
   "message.delivery_unknown": "Delivery unknown",
   "reminder.skipped": "Reminder skipped",
   "job.dead": "Automation step failed",
+  "appointment.booked_by_staff": "Booked by staff",
+  "appointment.cancelled": "Appointment cancelled",
+  "appointment.rescheduled": "Appointment rescheduled",
+  "attendance.marked": "Attendance recorded",
+  "noshow.recovery_started": "No-show recovery started",
+  "noshow.recovered": "Patient rebooked",
+  "noshow.escalated_to_staff": "Escalated to reception",
+  "exception.resolved": "Exception resolved",
 };
 
 const ACTOR_TONE = { ai: "primary", patient: "info", staff: "warn", system: "neutral", integration: "neutral" } as const;
@@ -53,6 +64,28 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const [timeline, messages] = await Promise.all([getTimeline(lead.correlation_id), listMessages({ correlationId: lead.correlation_id })]);
   const ai = lead.ai_result as { reason?: string; safety_flags?: string[]; provider?: string } | null;
 
+  // Staff booking is offered only while the lead is still waiting on a person.
+  const needsBooking = lead.status === "needs_review" || lead.status === "no_slot";
+  let departmentSlots: DepartmentSlots[] = [];
+  let preselected: string | null = null;
+  if (needsBooking) {
+    const departments = await listDepartments();
+    departmentSlots = await Promise.all(
+      departments.map(async (d) => ({
+        departmentId: d.department_id,
+        name: d.name,
+        slots: (await listOpenSlots(d.department_id, 15)).map((s) => ({
+          slot_id: s.slot_id,
+          label: `${formatSlot(s.slot_start)} · ${s.doctor_name}`,
+        })),
+      })),
+    );
+    preselected = resolveDepartment(
+      lead.department ?? lead.department_requested,
+      departments.map((d) => ({ id: d.department_id, name: d.name })),
+    );
+  }
+
   return (
     <>
       <AutoRefresh seconds={4} />
@@ -74,6 +107,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <Field label="Patient">{lead.patient_status ?? "—"} · consent {lead.consent_status}</Field>
             </dl>
           </Card>
+
+          {needsBooking && (
+            <Card title="Book this patient">
+              <BookLead leadId={lead.lead_id} departments={departmentSlots} preselected={preselected} />
+            </Card>
+          )}
 
           <Card title="Outcome">
             <dl className="grid gap-3 p-4">
