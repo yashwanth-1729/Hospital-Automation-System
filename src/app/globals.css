@@ -91,3 +91,27 @@ body {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* The audit report is handed to hospitals as a PDF: print only the document. */
+@media print {
+  aside,
+  nav {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --text: #111827;
+    --muted: #4b5563;
+    --border: #d1d5db;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

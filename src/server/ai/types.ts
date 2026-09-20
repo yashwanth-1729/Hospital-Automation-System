@@ -43,12 +43,18 @@ export interface LeadClassifier {
   classify(input: LeadClassificationInput): Promise<LeadClassification>;
 }
 
-/** Shape the LLM must return. Validated before anything acts on it. */
+/**
+ * Shape the LLM must return. Validated before anything acts on it.
+ * Optional fields tolerate null, which some models send instead of omitting them;
+ * the fields that decide behaviour (department, type, priority) stay strict.
+ */
+const optionalText = z.preprocess((v) => v ?? "", z.string());
+
 export const LlmLeadOutputSchema = z.object({
   department: z.string().min(1),
   enquiry_type: z.enum(ENQUIRY_TYPES),
   priority_for_human_review: z.enum(["normal", "review"]),
-  missing_information: z.array(z.string()).default([]),
-  reason: z.string().default(""),
+  missing_information: z.preprocess((v) => v ?? [], z.array(optionalText)).default([]),
+  reason: optionalText.default(""),
 });
 export type LlmLeadOutput = z.infer<typeof LlmLeadOutputSchema>;

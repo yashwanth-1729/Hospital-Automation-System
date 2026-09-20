@@ -89,8 +89,9 @@ async function llmSummary(metrics: unknown, fetchImpl?: typeof fetch): Promise<{
       body: JSON.stringify({
         model: e.AI_MODEL,
         temperature: 0,
-        max_tokens: 700,
+        max_tokens: 1200,
         response_format: { type: "json_object" },
+        reasoning: { enabled: false },
         messages: [
           { role: "system", content: MASTER_SYSTEM_PROMPT },
           { role: "user", content: buildPrompt(metrics) },

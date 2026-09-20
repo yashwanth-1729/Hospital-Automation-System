@@ -102,8 +102,12 @@ export class OpenAiCompatibleLeadClassifier implements LeadClassifier {
         body: JSON.stringify({
           model: this.config.model,
           temperature: 0,
-          max_tokens: 400,
+          // Generous enough that a model which thinks before answering still has room to answer.
+          max_tokens: 800,
           response_format: { type: "json_object" },
+          // Classification needs no chain of thought. Reasoning models otherwise spend the whole
+          // budget thinking and return empty content; this also halves latency and cost.
+          reasoning: { enabled: false },
           messages: [
             { role: "system", content: MASTER_SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
@@ -119,10 +123,19 @@ export class OpenAiCompatibleLeadClassifier implements LeadClassifier {
       throw new AiProviderError(`AI provider returned HTTP ${res.status}: ${body.slice(0, 300)}`);
     }
     const data = (await res.json().catch(() => null)) as
-      | { choices?: { message?: { content?: string | null } }[] }
+      | { choices?: { finish_reason?: string; message?: { content?: string | null } }[] }
       | null;
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) throw new AiProviderError("AI provider returned an empty completion");
+    const choice = data?.choices?.[0];
+    const content = choice?.message?.content;
+    if (!content) {
+      // A truncated answer is a configuration problem, so say which one.
+      const truncated = choice?.finish_reason === "length";
+      throw new AiProviderError(
+        truncated
+          ? `Model ${this.config.model} ran out of output tokens before answering (it may be a reasoning model)`
+          : "AI provider returned an empty completion",
+      );
+    }
     return content;
   }
 }

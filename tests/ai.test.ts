@@ -153,3 +153,27 @@ describe("OpenAI-compatible classifier", () => {
     }
   });
 });
+
+describe("tolerating model quirks", () => {
+  it("accepts null for optional fields, as some models send", async () => {
+    const out = JSON.stringify({
+      department: "dermatology",
+      enquiry_type: "appointment_booking",
+      priority_for_human_review: "normal",
+      missing_information: null,
+      reason: null,
+    });
+    const r = await llm(fakeFetch(out)).classify(input("book for acne", "Dermatology"));
+    expect(r).toMatchObject({ department: "dermatology", reason: "", missing_information: [] });
+  });
+
+  it("explains a truncated answer instead of saying 'empty'", async () => {
+    const truncated = vi.fn(async () =>
+      new Response(JSON.stringify({ choices: [{ finish_reason: "length", message: { content: null } }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    ) as unknown as typeof fetch;
+    await expect(llm(truncated).classify(input("book for acne"))).rejects.toThrow(/ran out of output tokens/);
+  });
+});
