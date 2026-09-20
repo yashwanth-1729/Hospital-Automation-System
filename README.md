@@ -15,6 +15,13 @@ npm install
 cp .env.example .env          # defaults work with no API keys
 npm run db:setup              # create tables + demo hospital (4 departments, 8 doctors, 14 days of slots)
 npm run dev:all               # web app on http://localhost:3000 + background worker
+
+Before a sales demo, fill the hospital with a month of realistic history so the dashboard and reports
+look alive (this clears existing transactional data and regenerates open slots):
+
+```bash
+npm run db:demo               # ~200 enquiries over 30 days, with no-shows, discharges and feedback
+```
 ```
 
 | URL | What |

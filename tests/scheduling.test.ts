@@ -242,3 +242,21 @@ describe("daily management summary", () => {
     expect(summary.questions_for_management.length).toBeGreaterThan(0);
   });
 });
+
+describe("summary caching by period", () => {
+  it("keeps a separate summary per reporting period", async () => {
+    const { generateDailySummary } = await import("@/server/ai/summary");
+    const { getReport, summaryMetrics } = await import("@/server/reports");
+    await booked();
+
+    const week = await generateDailySummary(summaryMetrics(await getReport(7)));
+    const month = await generateDailySummary(summaryMetrics(await getReport(30)));
+    expect(week.summary.headline).toContain("last 7 day(s)");
+    expect(month.summary.headline).toContain("last 30 day(s)");
+    expect(month.cached).toBe(false);
+
+    const weekAgain = await generateDailySummary(summaryMetrics(await getReport(7)));
+    expect(weekAgain.cached).toBe(true);
+    expect(weekAgain.summary.headline).toBe(week.summary.headline);
+  });
+});

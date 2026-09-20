@@ -14,7 +14,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "dev:all": "concurrently -k -n web,worker -c cyan,magenta \"next dev\" \"tsx watch src/worker/index.ts\""
+    "dev:all": "concurrently -k -n web,worker -c cyan,magenta \"next dev\" \"tsx watch src/worker/index.ts\"",
+    "db:demo": "tsx scripts/demo-data.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.1",

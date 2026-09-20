@@ -120,12 +120,14 @@ export async function generateDailySummary(
   opts: { date?: string; force?: boolean; fetchImpl?: typeof fetch } = {},
 ): Promise<SummaryResult> {
   const date = opts.date ?? istDateString();
+  // Each reporting period gets its own summary: a 7-day and a 30-day view say different things.
+  const periodDays = metrics.period_days;
   const db = pool();
 
   if (!opts.force) {
     const cached = await db.query<{ summary: ManagementSummary; provider: string; model: string | null; generated_at: Date }>(
-      `SELECT summary, provider, model, generated_at FROM daily_summaries WHERE summary_date = $1`,
-      [date],
+      `SELECT summary, provider, model, generated_at FROM daily_summaries WHERE summary_date = $1 AND period_days = $2`,
+      [date, periodDays],
     );
     const row = cached.rows[0];
     if (row) return { summary: row.summary, provider: row.provider, model: row.model, generatedAt: row.generated_at, cached: true };
@@ -151,12 +153,12 @@ export async function generateDailySummary(
   }
 
   const saved = await db.query<{ generated_at: Date }>(
-    `INSERT INTO daily_summaries (summary_date, metrics, summary, provider, model)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (summary_date) DO UPDATE SET metrics = EXCLUDED.metrics, summary = EXCLUDED.summary,
+    `INSERT INTO daily_summaries (summary_date, period_days, metrics, summary, provider, model)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (summary_date, period_days) DO UPDATE SET metrics = EXCLUDED.metrics, summary = EXCLUDED.summary,
        provider = EXCLUDED.provider, model = EXCLUDED.model, generated_at = now()
      RETURNING generated_at`,
-    [date, metrics, summary, provider, model],
+    [date, periodDays, metrics, summary, provider, model],
   );
   return { summary, provider, model, generatedAt: saved.rows[0]!.generated_at, cached: false };
 }
