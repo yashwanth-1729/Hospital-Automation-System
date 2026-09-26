@@ -1,0 +1,26 @@
+# Staff console and webhooks. Copy to /etc/systemd/system/nit-web.service
+[Unit]
+Description=NIT Hospital Automation - web
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=nit
+WorkingDirectory=/opt/nit-hospital-automation
+EnvironmentFile=/opt/nit-hospital-automation/.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+# The app writes nothing outside its own directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/nit-hospital-automation/.next
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nit-web
+
+[Install]
+WantedBy=multi-user.target

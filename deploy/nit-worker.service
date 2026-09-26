@@ -1,0 +1,25 @@
+# Background worker: classification, messaging, reminders, no-show sweep, retention.
+# Copy to /etc/systemd/system/nit-worker.service
+[Unit]
+Description=NIT Hospital Automation - worker
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=nit
+WorkingDirectory=/opt/nit-hospital-automation
+EnvironmentFile=/opt/nit-hospital-automation/.env
+ExecStart=/usr/bin/npx tsx src/worker/index.ts
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nit-worker
+
+[Install]
+WantedBy=multi-user.target

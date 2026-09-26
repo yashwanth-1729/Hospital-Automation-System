@@ -36,6 +36,18 @@ const EnvSchema = z.object({
   // Base URL used in patient links (feedback form).
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:3000"),
 
+  // Inbound WhatsApp: Meta signs each webhook with the app secret, and checks the verify
+  // token once when the webhook is first registered.
+  WA_APP_SECRET: optionalString,
+  WA_VERIFY_TOKEN: optionalString,
+
+  // --- Retention (DPDP Act 2023) ---
+  RETENTION_ENABLED: z.stringbool().default(true),
+  // Message bodies are redacted after this long; the log of what was sent, when, remains.
+  RETENTION_MESSAGE_DAYS: z.coerce.number().int().min(7).default(180),
+  // Free-text enquiries are cleared after this long; the structured lead record remains.
+  RETENTION_ENQUIRY_DAYS: z.coerce.number().int().min(7).default(365),
+
   WEBHOOK_SECRET: optionalString,
   DASHBOARD_PASSWORD: optionalString,
 });
@@ -56,8 +68,15 @@ export function env(): Env {
   if (e.AI_PROVIDER === "openai_compatible" && !e.AI_API_KEY) {
     throw new Error("AI_PROVIDER=openai_compatible requires AI_API_KEY");
   }
-  if (e.MESSAGING_PROVIDER === "whatsapp_cloud" && (!e.WA_PHONE_NUMBER_ID || !e.WA_ACCESS_TOKEN)) {
-    throw new Error("MESSAGING_PROVIDER=whatsapp_cloud requires WA_PHONE_NUMBER_ID and WA_ACCESS_TOKEN");
+  if (e.MESSAGING_PROVIDER === "whatsapp_cloud") {
+    if (!e.WA_PHONE_NUMBER_ID || !e.WA_ACCESS_TOKEN) {
+      throw new Error("MESSAGING_PROVIDER=whatsapp_cloud requires WA_PHONE_NUMBER_ID and WA_ACCESS_TOKEN");
+    }
+    // Without the app secret an inbound webhook cannot be trusted, and anyone who learns the
+    // URL could mark messages delivered or opt a patient out.
+    if (!e.WA_APP_SECRET) {
+      throw new Error("MESSAGING_PROVIDER=whatsapp_cloud requires WA_APP_SECRET to verify inbound webhooks");
+    }
   }
   cached = e;
   return e;

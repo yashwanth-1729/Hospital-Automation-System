@@ -8,7 +8,9 @@ const EMERGENCY_PATTERNS: [string, RegExp][] = [
   ["chest pain", /\bchest\s*(pain|tightness|pressure)\b|\bseene\s*(me|mein)\s*dard\b/i],
   ["breathing difficulty", /\b(can'?t|cannot|unable to|difficulty|trouble)\s+breath|\bbreathless|\bshortness of breath\b|\bsaans\s*(nahi|lene\s*me|phool)/i],
   ["unconscious", /\bunconscious\b|\bfainted\b|\bnot responding\b|\bbehosh\b/i],
-  ["heavy bleeding", /\b(heavy|severe|lot of|continuous)\s+bleeding\b|\bbleeding (heavily|a lot)\b|\bkhoon\s*(beh|nikal)/i],
+  // Any active bleeding a patient volunteers deserves a person's eyes, qualified or not:
+  // an inbound WhatsApp reply of "bleeding since morning" was slipping through as routine.
+  ["bleeding", /\bbleed(ing)?\b|\bblood\s*(loss|coming)\b|\bkhoon\s*(beh|nikal|aa\s*raha)/i],
   ["stroke signs", /\bstroke\b|\bparaly[sz]|\bface\s+(drooping|droop)\b|\bslurred speech\b|\blakwa\b/i],
   ["seizure", /\bseizure|\bconvulsion|\bfits\b|\bmirgi\b/i],
   ["self-harm", /\bsuicid|\bkill (myself|himself|herself)\b|\bself[-\s]?harm\b|\bend my life\b/i],
@@ -26,6 +28,7 @@ const URGENCY_PATTERNS: [string, RegExp][] = [
 const CLINICAL_QUESTION_PATTERNS: [string, RegExp][] = [
   ["medication question", /\b(which|what|kaun\s*si)\s+(medicine|tablet|drug|dawai|dawa)\b|\bshould i take\b|\bdosage\b|\bdose of\b|\bstop (taking|my) (medicine|tablet)/i],
   ["result interpretation", /\b(is|are) (my|the) (report|result|value|level)s? (normal|ok|bad|serious)\b|\bwhat does (my|the) (report|result)\b|\binterpret\b/i],
+  ["asking if it is normal", /\bis (that|this|it) (normal|ok|okay|serious|dangerous|fine)\b|\bshould i (worry|be worried|come in)\b|\bnormal hai\b/i],
   ["diagnosis request", /\bwhat (disease|condition|illness) (do|does|is)\b|\bdo i have\b|\bis it (cancer|serious|dangerous)\b|\bdiagnos/i],
   ["treatment advice", /\bhome remed|\bhow (to|do i) (treat|cure)\b|\bwhat treatment\b|\bilaaj\b/i],
 ];

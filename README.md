@@ -38,6 +38,7 @@ npm run db:demo               # ~200 enquiries over 30 days, with no-shows, disc
 | `/phone` | Demo phone showing the WhatsApp messages patients would receive |
 | `POST /api/webhooks/lead` | Intake for external sources (Tally, website, Meta lead ads) |
 | `POST /api/webhooks/discharge` | Discharge event from the hospital's HMS |
+| `GET/POST /api/webhooks/whatsapp` | Delivery receipts and patient replies from Meta (signature verified) |
 | `GET /api/health` | Health check for uptime monitoring |
 
 ## How it works
@@ -72,6 +73,13 @@ Everything runs on Postgres. There is no n8n/Make dependency: the job queue is a
   if the AI is down or returns garbage, the rules engine takes over and IT is alerted.
 - **Consent respected.** No WhatsApp message without consent; staff get a task to call instead.
 - **Nothing fails silently.** Failed jobs retry with backoff, then open an exception with an owner and due time.
+- **Replies reach a person, never a bot.** The system never answers a patient message. A reply
+  becomes work for staff, and a reply that sounds clinical becomes urgent work — the same
+  safety net as the enquiry form applies to WhatsApp.
+- **Opt-out is honoured immediately.** "STOP" (and its Hinglish equivalents) withdraws consent
+  and cancels everything already queued for that patient.
+- **Delivery is tracked, not assumed.** Receipts move a message sent → delivered → read, never
+  backwards, and a failed delivery opens work for staff.
 - **Full audit trail.** Every step is logged with actor (patient / system / ai / staff) and correlation ID.
 - **Cancelled slots are reusable.** Cancelling frees the slot immediately, stops reminders and recovery,
   and tells the patient; a cancelled appointment never blocks that slot or that lead again.
@@ -141,6 +149,32 @@ generated from the same numbers.
 - `WEBHOOK_SECRET`: when set, the webhook requires header `x-webhook-secret`.
 - `DASHBOARD_PASSWORD`: when set, the staff console requires basic auth (user `admin`). Set this before exposing
   the app beyond localhost. Production should sit behind HTTPS.
+
+## Retention (DPDP Act 2023)
+
+The worker purges daily, and `npm run retention` runs it on demand:
+
+- message bodies and patient replies are redacted after `RETENTION_MESSAGE_DAYS` (180 default)
+- free-text enquiries after `RETENTION_ENQUIRY_DAYS` (365 default)
+- what remains is the operational record — who was contacted, which template, when, and whether
+  it arrived — so the hospital can answer "did you contact this patient" years later without
+  still holding what the patient said
+- the audit log is untouched, because it never contained patient content
+
+Every run is recorded in `retention_runs`, which is what an auditor asks to see.
+
+## Deploying
+
+See [docs/DEPLOY.md](docs/DEPLOY.md): Ubuntu VPS, Postgres, two systemd services, Caddy for
+HTTPS, nightly backups. Before the first real patient:
+
+```bash
+npm run preflight
+```
+
+It fails on the things that actually break deployments — pending migrations, a worker that was
+never started, demo data still present, a development database password, no dashboard password,
+HTTP instead of HTTPS, WhatsApp still on the demo phone.
 
 ## Tests
 

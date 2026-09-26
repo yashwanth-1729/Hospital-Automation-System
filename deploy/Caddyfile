@@ -1,0 +1,33 @@
+# HTTPS with an automatic certificate. Replace the domain, then:
+#   sudo caddy run --config /etc/caddy/Caddyfile
+#
+# Caddy terminates TLS and forwards to the app on localhost, so the app itself never
+# handles certificates and is never exposed directly.
+
+care.example.com {
+	encode zstd gzip
+
+	# Meta and any form provider post here. Left open, but each endpoint verifies its own
+	# signature or shared secret in the application.
+	@webhooks path /api/webhooks/*
+	handle @webhooks {
+		reverse_proxy localhost:3000
+	}
+
+	handle {
+		reverse_proxy localhost:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/care.log
+		format json
+	}
+}

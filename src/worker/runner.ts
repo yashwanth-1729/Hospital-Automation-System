@@ -4,6 +4,7 @@ import { raiseException } from "@/lib/exceptions";
 import { claimJobs, completeJob, failJob, reapStaleJobs, type Job } from "@/lib/jobs";
 import { MessagingError } from "@/server/messaging/providers";
 import { sweepNoShows } from "@/server/workflows/no-show";
+import { runRetention } from "@/server/workflows/retention";
 import { TemplateError } from "@/server/messaging/templates";
 import { getHandler, PermanentJobError } from "./handlers";
 
@@ -80,6 +81,22 @@ export async function sweepOnce(): Promise<string[]> {
     return await sweepNoShows();
   } finally {
     await db.query(`SELECT pg_advisory_unlock(hashtext('noshow_sweep'))`);
+  }
+}
+
+/**
+ * Daily retention purge. Advisory-locked so only one worker runs it, and idempotent by day
+ * so a restart cannot run it twice.
+ */
+export async function retentionOnce(): Promise<number> {
+  const db = pool();
+  const lock = await db.query<{ locked: boolean }>(`SELECT pg_try_advisory_lock(hashtext('retention')) AS locked`);
+  if (!lock.rows[0]?.locked) return 0;
+  try {
+    const result = await runRetention();
+    return result.messagesRedacted + result.enquiriesCleared + result.inboundCleared;
+  } finally {
+    await db.query(`SELECT pg_advisory_unlock(hashtext('retention'))`);
   }
 }
 

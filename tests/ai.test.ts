@@ -177,3 +177,24 @@ describe("tolerating model quirks", () => {
     await expect(llm(truncated).classify(input("book for acne"))).rejects.toThrow(/ran out of output tokens/);
   });
 });
+
+describe("gaps found through the inbound WhatsApp channel", () => {
+  it("flags bleeding even when the patient does not call it heavy", () => {
+    // A reply of "bleeding since morning" used to pass as routine, because the pattern
+    // required a qualifier such as "heavy".
+    expect(checkSafety("I have been bleeding since morning").emergency).toBe(true);
+    expect(checkSafety("there is some blood coming").emergency).toBe(true);
+  });
+
+  it("treats 'is that normal?' as a question only a clinician should answer", () => {
+    expect(checkSafety("I have swelling in my feet, is that normal?").clinicalQuestion).toBe(true);
+    expect(checkSafety("should I be worried about this?").clinicalQuestion).toBe(true);
+  });
+
+  it("still leaves ordinary booking messages alone", () => {
+    for (const text of ["can I come at 4pm instead", "thank you", "yes I will attend"]) {
+      const s = checkSafety(text);
+      expect(s.emergency || s.clinicalQuestion).toBe(false);
+    }
+  });
+});
