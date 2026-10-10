@@ -2,6 +2,7 @@ import "../src/lib/load-env";
 import pg from "pg";
 import { newCorrelationId, newId } from "../src/lib/ids";
 import { addDays, formatSlot, istAt, istDateString, istDayRange } from "../src/lib/time";
+import { generateClinicHistory } from "./demo-clinic";
 import { DEMO_DEPARTMENTS, DEMO_DOCTORS, seed } from "./seed";
 
 /**
@@ -435,6 +436,9 @@ export async function generateDemoData(connectionString: string, days = 30) {
   // Fresh open slots for the live part of the demo.
   await seed(connectionString, { days: 14, quiet: true });
   console.log("open slots regenerated for the next 14 days");
+
+  // The hospital operating system's side: visits, prescriptions, dispensing, invoices, wards.
+  await generateClinicHistory(connectionString, { days: Math.min(days, 21) });
 }
 
 if (process.argv[1]?.endsWith("demo-data.ts")) {

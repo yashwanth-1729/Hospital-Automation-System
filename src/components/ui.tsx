@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AnimatedNumber } from "./client";
+import { Icons } from "./icons";
 
 type Tone = "neutral" | "ok" | "warn" | "danger" | "info" | "primary";
 
@@ -14,7 +16,7 @@ const TONES: Record<Tone, string> = {
 
 export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TONES[tone]}`}>
+    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ${TONES[tone]}`}>
       {children}
     </span>
   );
@@ -53,10 +55,10 @@ export function Severity({ level }: { level: string }) {
 
 export function Card({ title, action, children, className = "" }: { title?: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-border bg-surface ${className}`}>
+    <section className={`rounded-2xl border border-border/80 bg-surface shadow-[var(--shadow-sm)] ${className}`}>
       {title && (
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold">{title}</h2>
+        <header className="flex items-center justify-between gap-3 border-b border-border/80 px-4 py-3">
+          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
           {action}
         </header>
       )}
@@ -68,21 +70,33 @@ export function Card({ title, action, children, className = "" }: { title?: Reac
 export function Stat({ label, value, hint, tone = "neutral", href }: { label: string; value: ReactNode; hint?: ReactNode; tone?: Tone; href?: string }) {
   const accent = tone === "neutral" ? "text-text" : TONES[tone].split(" ")[1];
   const body = (
-    <div className="h-full rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary/40">
-      <div className="text-xs font-medium tracking-wide text-muted uppercase">{label}</div>
-      <div className={`num mt-2 text-3xl font-semibold ${accent}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted">{hint}</div>}
+    <div
+      className={`group h-full rounded-2xl border border-border/80 bg-surface p-4 shadow-[var(--shadow-sm)] transition-all duration-200 ${
+        href ? "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-md)]" : ""
+      }`}
+    >
+      <div className="text-[13px] font-medium text-muted">{label}</div>
+      <div className={`num mt-2 text-3xl leading-none font-semibold tracking-tight ${accent}`}>
+        {typeof value === "number" ? <AnimatedNumber value={value} /> : value}
+      </div>
+      {hint && <div className="mt-2 text-xs text-muted">{hint}</div>}
     </div>
   );
-  return href ? <Link href={href}>{body}</Link> : body;
+  return href ? (
+    <Link href={href} className="block h-full rounded-2xl">
+      {body}
+    </Link>
+  ) : (
+    body
+  );
 }
 
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em]">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-sm text-muted">{description}</p>}
       </div>
       {actions}
     </div>
@@ -90,11 +104,18 @@ export function PageHeader({ title, description, actions }: { title: string; des
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <div className="px-4 py-10 text-center text-sm text-muted">{children}</div>;
+  return (
+    <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-sm text-muted">
+      <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface-2 text-muted/80">
+        <Icons.empty width={20} height={20} />
+      </span>
+      <div className="max-w-sm">{children}</div>
+    </div>
+  );
 }
 
 export function Th({ children, className = "" }: { children?: ReactNode; className?: string }) {
-  return <th className={`px-4 py-2 text-left text-xs font-medium tracking-wide text-muted uppercase ${className}`}>{children}</th>;
+  return <th className={`px-4 py-2 text-left text-xs font-medium text-muted ${className}`}>{children}</th>;
 }
 
 export function Td({ children, className = "" }: { children?: ReactNode; className?: string }) {

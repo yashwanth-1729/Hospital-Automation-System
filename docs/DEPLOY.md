@@ -119,8 +119,10 @@ Then, from the blueprint's go-live procedure:
 
 1. Clear demo data (`psql` → truncate the transactional tables, or run `npm run db:demo` only
    on a demo server, never on the hospital's).
-2. Register the WhatsApp templates listed by `npm run preflight` in WhatsApp Manager and wait
-   for approval.
+2. Register the WhatsApp templates and wait for approval. `npm run templates` prints every
+   template exactly as it will be sent; `npm run templates -- --submit` creates the missing ones
+   in Meta (set `WA_BUSINESS_ACCOUNT_ID` and `WA_ACCESS_TOKEN`). It never edits or deletes an
+   existing template.
 3. Point Meta's webhook at `https://your-domain/api/webhooks/whatsapp` with your
    `WA_VERIFY_TOKEN`, and subscribe to the `messages` field so delivery receipts and replies
    arrive.

@@ -99,7 +99,7 @@ export const TEMPLATES = {
     params: ["patient_name", "hospital_name", "feedback_link"],
     render: (v) =>
       `Hello ${v.patient_name}, we hope you are recovering well. ` +
-      `Could you rate your recent experience at ${v.hospital_name}? It takes less than a minute: ${v.feedback_link}`,
+      `Could you rate your recent experience at ${v.hospital_name}? It takes less than a minute: ${v.feedback_link} Thank you for your time.`,
   },
   CONSULT_COMPLETE_01: {
     providerName: "consult_complete_01",

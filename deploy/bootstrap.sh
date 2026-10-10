@@ -169,9 +169,12 @@ if [ "$admins" = "0" ]; then
 fi
 
 leads="$(sudo -u postgres psql -d "$DB_NAME" -qtAX -c 'SELECT count(*) FROM leads' 2>/dev/null || echo 0)"
+DEMO_ACCOUNTS=""
 if [ "${DEMO_DATA:-0}" = "1" ] && [ "$leads" = "0" ]; then
   echo "loading a month of fictional history"
   as_app bash -c "cd '$APP_DIR' && npm run db:demo"
+  # One sign-in per role, for showing each person's view. Random passwords, printed once below.
+  DEMO_ACCOUNTS="$(as_app bash -c "cd '$APP_DIR' && npm run --silent user:demo" || true)"
 fi
 
 # ---------------------------------------------------------------------------------------------
@@ -249,6 +252,10 @@ if [ -n "$ADMIN_PASSWORD" ]; then
 EOF
 else
   echo "   Staff login    unchanged. List or recover accounts: cd $APP_DIR && sudo -u $APP_USER npm run user:list"
+fi
+if [ -n "$DEMO_ACCOUNTS" ]; then
+  printf '%s
+' "$DEMO_ACCOUNTS"
 fi
 cat <<EOF
 

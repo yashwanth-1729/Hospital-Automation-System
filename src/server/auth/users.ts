@@ -110,6 +110,7 @@ export async function listStaff(db: Db): Promise<(StaffUser & { doctor_name: str
     `SELECT u.user_id, u.email, u.full_name, u.role, u.doctor_id, u.active, u.must_change_password, u.last_login_at,
             d.full_name AS doctor_name
        FROM staff_users u LEFT JOIN doctors d ON d.doctor_id = u.doctor_id
+      WHERE u.user_id <> 'USR-DEMO-HISTORY'
       ORDER BY u.active DESC, u.role, u.full_name`,
   );
 }

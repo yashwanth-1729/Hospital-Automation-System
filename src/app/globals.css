@@ -1,49 +1,68 @@
 @import "tailwindcss";
 
-/* Design tokens. Calm clinical palette: slate neutrals, teal primary, semantic status colours. */
+/*
+ * Design tokens.
+ * One accent (a deep clinical teal) on a green-tinted neutral family, so the greys feel related
+ * to the brand rather than imported. Shadows carry the hue of the surface they sit on.
+ */
 :root {
-  --bg: #f6f7f9;
+  --bg: #f3f6f5;
   --surface: #ffffff;
-  --surface-2: #f1f3f6;
-  --border: #e3e6eb;
-  --text: #16202c;
-  --muted: #5f6b7a;
+  --surface-2: #edf1f0;
+  --border: #dde4e2;
+  --text: #13201d;
+  --muted: #58696a;
   --primary: #0f766e;
-  --primary-soft: #e6f4f2;
-  --ok: #15803d;
-  --ok-soft: #e8f6ec;
-  --warn: #b45309;
-  --warn-soft: #fdf3e3;
-  --danger: #b91c1c;
-  --danger-soft: #fdecec;
-  --info: #1d4ed8;
-  --info-soft: #e9effd;
+  --primary-strong: #0b5f58;
+  --primary-soft: #e1f1ee;
+  --ok: #17803d;
+  --ok-soft: #e6f5ea;
+  --warn: #a8570b;
+  --warn-soft: #fbf1df;
+  --danger: #b4231f;
+  --danger-soft: #fbeaea;
+  --info: #2a52be;
+  --info-soft: #e8edfb;
   --wa-bg: #efeae2;
   --wa-bubble: #ffffff;
   --wa-header: #075e54;
+
+  --shadow-color: 168 40% 14%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 1px 1px hsl(var(--shadow-color) / 0.04);
+  --shadow-md: 0 6px 18px -6px hsl(var(--shadow-color) / 0.16), 0 2px 6px -2px hsl(var(--shadow-color) / 0.08);
+  --shadow-lg: 0 18px 40px -14px hsl(var(--shadow-color) / 0.28);
+  --grain-opacity: 0.045;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e1319;
-    --surface: #151c24;
-    --surface-2: #1b242e;
-    --border: #273240;
-    --text: #e6ebf1;
-    --muted: #93a0b0;
-    --primary: #2dd4bf;
-    --primary-soft: #11302d;
-    --ok: #4ade80;
-    --ok-soft: #10281a;
-    --warn: #fbbf24;
-    --warn-soft: #2d2410;
-    --danger: #f87171;
-    --danger-soft: #331616;
-    --info: #93b4fd;
+    --bg: #0b1210;
+    --surface: #111a17;
+    --surface-2: #17221f;
+    --border: #243330;
+    --text: #e4ece9;
+    --muted: #8da29c;
+    --primary: #3dd5c0;
+    --primary-strong: #6fe3d3;
+    --primary-soft: #0f2b27;
+    --ok: #55d98a;
+    --ok-soft: #0f2618;
+    --warn: #f0b944;
+    --warn-soft: #2a2110;
+    --danger: #f27c78;
+    --danger-soft: #311616;
+    --info: #94b3fa;
     --info-soft: #172240;
     --wa-bg: #0b141a;
     --wa-bubble: #1f2c34;
     --wa-header: #1f2c34;
+
+    --shadow-color: 170 60% 2%;
+    --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.5);
+    --shadow-md: 0 8px 22px -8px hsl(var(--shadow-color) / 0.7);
+    --shadow-lg: 0 20px 44px -16px hsl(var(--shadow-color) / 0.8);
+    --grain-opacity: 0.07;
   }
 }
 
@@ -55,6 +74,7 @@
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
   --color-primary-soft: var(--primary-soft);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
@@ -67,40 +87,273 @@
   --color-wa-bg: var(--wa-bg);
   --color-wa-bubble: var(--wa-bubble);
   --color-wa-header: var(--wa-header);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  --shadow-card: var(--shadow-sm);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
 body {
-  background: var(--bg);
   color: var(--text);
 }
 
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background-color: var(--bg);
+  /* A soft wash of the brand colour from the top corner, so large flat areas are not dead. */
+  background-image:
+    radial-gradient(900px 420px at 92% -8%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 70%),
+    radial-gradient(700px 380px at -6% 105%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Fine grain over everything, to break the digital flatness. Never intercepts the pointer. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+@media (prefers-color-scheme: dark) {
+  body::after {
+    mix-blend-mode: screen;
+  }
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 /* Tabular numbers keep KPI digits aligned while values refresh. */
 .num {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* The audit report is handed to hospitals as a PDF: print only the document. */
+/* --- interaction: everything that can be pressed answers the press --- */
+
+button,
+a,
+input,
+select,
+textarea,
+summary {
+  transition:
+    background-color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    box-shadow 200ms var(--ease-out),
+    opacity 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:not(:disabled):active {
+  transform: translateY(0.5px) scale(0.975);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
+}
+
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--danger) 18%, transparent);
+}
+
+/* Primary buttons lift very slightly; the shadow carries the brand hue. */
+button.bg-primary:not(:disabled):hover,
+a.bg-primary:hover {
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--primary) 70%, transparent);
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+/* --- motion --- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 45%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, currentColor 0%, transparent);
+  }
+}
+
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The page wrapper (template.tsx) remounts on every navigation, so this plays each time. */
+  .page-in > * {
+    animation: rise 460ms var(--ease-out) both;
+  }
+  .page-in > *:nth-child(1) { animation-delay: 0ms; }
+  .page-in > *:nth-child(2) { animation-delay: 50ms; }
+  .page-in > *:nth-child(3) { animation-delay: 100ms; }
+  .page-in > *:nth-child(4) { animation-delay: 150ms; }
+  .page-in > *:nth-child(5) { animation-delay: 200ms; }
+  .page-in > *:nth-child(6) { animation-delay: 240ms; }
+  .page-in > *:nth-child(n + 7) { animation-delay: 280ms; }
+
+  /* Cards in a grid cascade in a beat apart. */
+  .stagger > * {
+    animation: rise 420ms var(--ease-out) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 60ms; }
+  .stagger > *:nth-child(2) { animation-delay: 110ms; }
+  .stagger > *:nth-child(3) { animation-delay: 160ms; }
+  .stagger > *:nth-child(4) { animation-delay: 210ms; }
+  .stagger > *:nth-child(5) { animation-delay: 260ms; }
+  .stagger > *:nth-child(n + 6) { animation-delay: 300ms; }
+
+  .pop-in {
+    animation: pop 220ms var(--ease-out) both;
+  }
+
+  .bar-rise {
+    transform-origin: bottom;
+    animation: bar-rise 520ms var(--ease-out) both;
+  }
+  .bar-grow {
+    transform-origin: left;
+    animation: bar-grow 620ms var(--ease-out) both;
+  }
+  .live-dot {
+    animation: soft-pulse 2.4s ease-out infinite;
+  }
+  [role="status"],
+  [role="alert"] {
+    animation: pop 220ms var(--ease-out) both;
+  }
+}
+
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(100deg, var(--surface-2) 30%, color-mix(in oklab, var(--surface-2) 60%, var(--surface)) 50%, var(--surface-2) 70%);
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: shimmer 1.4s linear infinite;
+  }
+}
+
+/* The audit report and invoices are handed over as paper or PDF: print only the document. */
 @media print {
   aside,
-  nav {
+  nav,
+  .no-print {
     display: none !important;
   }
 
   main {
     padding: 0 !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body::after {
+    display: none;
   }
 
   :root {
@@ -109,25 +362,15 @@ body {
     --text: #111827;
     --muted: #4b5563;
     --border: #d1d5db;
+    --shadow-sm: none;
+  }
+
+  .page-in > *,
+  .stagger > * {
+    animation: none !important;
   }
 
   a[href]::after {
     content: "";
   }
-}
-
-/* Chart motion: bars rise and fill once when a dashboard loads. */
-@keyframes bar-rise {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
-}
-@keyframes bar-grow {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-.bar-rise { transform-origin: bottom; animation: bar-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.bar-grow { transform-origin: left; animation: bar-grow 600ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-@media (prefers-reduced-motion: reduce) {
-  .bar-rise, .bar-grow { animation: none; }
 }

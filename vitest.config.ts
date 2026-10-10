@@ -10,5 +10,7 @@ export default defineConfig({
     // Integration tests share one database; run files sequentially.
     fileParallelism: false,
     testTimeout: 20000,
+    // Truncating every table before each test is slow on a busy disk; the default 10s is too tight.
+    hookTimeout: 60000,
   },
 });

@@ -18,6 +18,8 @@ const EnvSchema = z.object({
   MESSAGING_PROVIDER: z.enum(["mock", "whatsapp_cloud"]).default("mock"),
   WA_PHONE_NUMBER_ID: optionalString,
   WA_ACCESS_TOKEN: optionalString,
+  // Only needed by scripts/register-templates.ts, to submit templates for approval.
+  WA_BUSINESS_ACCOUNT_ID: optionalString,
   WA_API_VERSION: z.string().default("v23.0"),
   WA_TEMPLATE_LANGUAGE: z.string().default("en"),
 
