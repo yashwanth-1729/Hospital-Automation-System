@@ -1,4 +1,4 @@
-# Staff console and webhooks. Copy to /etc/systemd/system/nit-web.service
+# Staff console and webhooks. Installed by deploy/bootstrap.sh.
 [Unit]
 Description=NIT Hospital Automation - web
 After=network.target postgresql.service
@@ -7,12 +7,14 @@ Wants=postgresql.service
 [Service]
 Type=simple
 User=nit
+Group=nit
 WorkingDirectory=/opt/nit-hospital-automation
 EnvironmentFile=/opt/nit-hospital-automation/.env
-ExecStart=/usr/bin/npm run start
+Environment=NODE_ENV=production
+# Bound to localhost: Caddy is the only thing that talks to the internet.
+ExecStart=/opt/nit-hospital-automation/node_modules/.bin/next start -H 127.0.0.1 -p 3000
 Restart=always
 RestartSec=5
-# The app writes nothing outside its own directory.
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
