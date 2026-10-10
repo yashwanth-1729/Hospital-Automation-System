@@ -1,6 +1,8 @@
 import { audit } from "@/lib/audit";
 import { one, pool } from "@/lib/db";
+import { env } from "@/lib/env";
 import { raiseException } from "@/lib/exceptions";
+import { normalizeIndianPhone } from "@/lib/phone";
 import { newId } from "@/lib/ids";
 import type { WorkflowKey } from "@/lib/workflows";
 import { WORKFLOWS } from "@/lib/workflows";
@@ -24,6 +26,18 @@ export type SendOutcome =
   | { status: "skipped"; reason: string }
   | { status: "duplicate"; messageId: string }
   | { status: "ambiguous"; messageId: string };
+
+/** The numbers real messages may go to, or null when no allowlist is configured. */
+export function allowedRecipients(raw: string | undefined): Set<string> | null {
+  if (!raw?.trim()) return null;
+  const numbers = raw
+    // Commas, semicolons or new lines separate numbers; spaces belong inside "90529 96536".
+    .split(/[,;\n]+/)
+    .map((n) => normalizeIndianPhone(n))
+    .filter((n): n is string => !!n);
+  // A list that parses to nothing must block everything, not silently allow everyone.
+  return new Set(numbers);
+}
 
 /** How long a 'sending' row may sit before we conclude its sender crashed. */
 const IN_FLIGHT_GRACE_SECONDS = 120;
@@ -86,6 +100,31 @@ export async function sendTemplateMessage(req: SendRequest): Promise<SendOutcome
       });
     }
     return { status: "skipped", reason: "no_messaging_consent" };
+  }
+
+  // A test number or a demo should reach only the people who agreed to receive it. The mock
+  // provider is exempt: it sends nothing.
+  const allowed = provider.name === "mock" ? null : allowedRecipients(env().WA_ALLOWED_RECIPIENTS);
+  if (allowed && !allowed.has(patient.phone)) {
+    const inserted = await one<{ message_id: string }>(
+      db,
+      `INSERT INTO communication_log (message_id, dedupe_key, patient_id, recipient, channel, provider, template_name,
+                                      workflow_name, body, correlation_id, delivery_status, skip_reason)
+       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, 'skipped', 'not_on_allowlist')
+       ON CONFLICT (dedupe_key) DO NOTHING RETURNING message_id`,
+      [...base, newId("MSG")],
+    );
+    if (inserted) {
+      await audit(db, {
+        workflow: req.workflow,
+        actor: "system",
+        action: "message.skipped_not_on_allowlist",
+        recordId: inserted.message_id,
+        correlationId: req.correlationId,
+        details: { template: req.template },
+      });
+    }
+    return { status: "skipped", reason: "not_on_allowlist" };
   }
 
   // Claim the dedupe key. Exactly one caller wins.

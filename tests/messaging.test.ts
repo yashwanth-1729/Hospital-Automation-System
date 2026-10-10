@@ -168,3 +168,51 @@ describe("job queue", () => {
     expect((await q.jobs("x"))[0]).toMatchObject({ status: "queued" });
   });
 });
+
+describe("recipient allowlist", () => {
+  const saved = process.env.WA_ALLOWED_RECIPIENTS;
+  afterEach(async () => {
+    if (saved === undefined) delete process.env.WA_ALLOWED_RECIPIENTS;
+    else process.env.WA_ALLOWED_RECIPIENTS = saved;
+    const { resetEnvCache } = await import("@/lib/env");
+    resetEnvCache();
+  });
+
+  async function setAllowlist(value: string) {
+    process.env.WA_ALLOWED_RECIPIENTS = value;
+    const { resetEnvCache } = await import("@/lib/env");
+    resetEnvCache();
+  }
+
+  it("sends only to listed numbers and records the rest as skipped, not failed", async () => {
+    await setAllowlist("90529 96536, +919000000001");
+    const send = fakeProvider(async () => ({ providerMessageId: "wamid.ok" }));
+    const listed = await patient("9052996536");
+    const stranger = await patient("9811122233");
+
+    expect((await sendTemplateMessage(ack(listed, "msg:allow:1"))).status).toBe("sent");
+    expect(await sendTemplateMessage(ack(stranger, "msg:allow:2"))).toEqual({ status: "skipped", reason: "not_on_allowlist" });
+    expect(send).toHaveBeenCalledTimes(1);
+
+    const log = await q.messages();
+    expect(log.find((m) => m.dedupe_key === "msg:allow:2")).toMatchObject({ delivery_status: "skipped", skip_reason: "not_on_allowlist" });
+    expect(await q.exceptions()).toEqual([]); // expected behaviour, not something staff must chase
+  });
+
+  it("treats a list with no valid numbers as blocking everyone", async () => {
+    await setAllowlist("not-a-number");
+    const send = fakeProvider(async () => ({ providerMessageId: "wamid.x" }));
+    const p = await patient("9052996536");
+    expect((await sendTemplateMessage(ack(p, "msg:allow:3"))).status).toBe("skipped");
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("does not apply when no list is configured", async () => {
+    delete process.env.WA_ALLOWED_RECIPIENTS;
+    const { resetEnvCache } = await import("@/lib/env");
+    resetEnvCache();
+    fakeProvider(async () => ({ providerMessageId: "wamid.y" }));
+    const p = await patient("9811122233");
+    expect((await sendTemplateMessage(ack(p, "msg:allow:4"))).status).toBe("sent");
+  });
+});

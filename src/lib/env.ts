@@ -20,6 +20,9 @@ const EnvSchema = z.object({
   WA_ACCESS_TOKEN: optionalString,
   // Only needed by scripts/register-templates.ts, to submit templates for approval.
   WA_BUSINESS_ACCOUNT_ID: optionalString,
+  // Comma-separated mobile numbers. When set, real WhatsApp is sent to these numbers only: a
+  // safety net for test numbers and demos, where Meta would reject everyone else anyway.
+  WA_ALLOWED_RECIPIENTS: optionalString,
   WA_API_VERSION: z.string().default("v23.0"),
   WA_TEMPLATE_LANGUAGE: z.string().default("en"),
 
