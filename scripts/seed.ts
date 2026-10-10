@@ -87,6 +87,19 @@ export const DEMO_MEDICINES = [
   { name: "Povidone-iodine 5% solution", generic: "Povidone-iodine", form: "solution", unit: "application" },
 ];
 
+export const DEMO_SERVICES = [
+  { name: "ECG", category: "diagnostic", price: 300 },
+  { name: "Chest X-ray", category: "diagnostic", price: 450 },
+  { name: "Complete blood count", category: "diagnostic", price: 350 },
+  { name: "Blood sugar (fasting)", category: "diagnostic", price: 120 },
+  { name: "Ultrasound abdomen", category: "diagnostic", price: 1200 },
+  { name: "Dressing, minor", category: "procedure", price: 150 },
+  { name: "Injection administration", category: "procedure", price: 100 },
+  { name: "Nebulisation", category: "procedure", price: 200 },
+  { name: "Suturing, minor", category: "procedure", price: 600 },
+  { name: "Plaster cast", category: "procedure", price: 1500 },
+];
+
 const SLOT_MINUTES = 30;
 
 export async function seed(connectionString: string, opts: { days?: number; quiet?: boolean } = {}) {
@@ -107,6 +120,19 @@ export async function seed(connectionString: string, opts: { days?: number; quie
         `INSERT INTO doctors (doctor_id, department_id, full_name) VALUES ($1, $2, $3)
          ON CONFLICT (doctor_id) DO UPDATE SET full_name = EXCLUDED.full_name, department_id = EXCLUDED.department_id`,
         [doc.id, doc.dept, doc.name],
+      );
+    }
+
+    // What each department charges for a consultation, and a short list of billable services.
+    const FEES: Record<string, number> = { cardiology: 900, dermatology: 600, orthopedics: 700, general_medicine: 400 };
+    for (const doc of DEMO_DOCTORS) {
+      await client.query(`UPDATE doctors SET consultation_fee = $2 WHERE doctor_id = $1`, [doc.id, FEES[doc.dept] ?? 500]);
+    }
+    for (const [i, svc] of DEMO_SERVICES.entries()) {
+      await client.query(
+        `INSERT INTO services (service_id, name, category, default_price) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (lower(name)) DO NOTHING`,
+        [`SVC-${String(i + 1).padStart(3, "0")}`, svc.name, svc.category, svc.price],
       );
     }
 

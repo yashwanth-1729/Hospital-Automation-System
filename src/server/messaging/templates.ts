@@ -109,6 +109,22 @@ export const TEMPLATES = {
       `Hello ${v.patient_name}, your consultation with ${v.doctor_name} at ${v.hospital_name} is complete. ` +
       `${v.next_step} If you have any questions, call ${v.hospital_contact}.`,
   },
+  RECEIPT_01: {
+    providerName: "receipt_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "amount", "invoice_number", "balance_line", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, ${v.hospital_name} has received ${v.amount} against invoice ${v.invoice_number}. ` +
+      `${v.balance_line} Questions about your bill? Call ${v.hospital_contact}.`,
+  },
+  INVOICE_DUE_01: {
+    providerName: "invoice_due_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "invoice_number", "balance", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, this is a reminder from ${v.hospital_name} that ${v.balance} is still due on invoice ${v.invoice_number}. ` +
+      `You can pay at the billing counter, or call ${v.hospital_contact} if you have any questions.`,
+  },
   APPT_REMINDER_01: {
     providerName: "appt_reminder_01",
     category: "utility",

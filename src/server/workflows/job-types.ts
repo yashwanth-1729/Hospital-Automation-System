@@ -9,6 +9,7 @@ export const JOB = {
   dischargeReminder: "discharge.reminder",
   feedbackRequest: "feedback.request",
   consultFollowupReminder: "consult.followup_reminder",
+  invoiceDue: "billing.invoice_due",
 } as const;
 
 export type JobType = (typeof JOB)[keyof typeof JOB];

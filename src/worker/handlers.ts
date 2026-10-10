@@ -8,6 +8,7 @@ import { processLead } from "@/server/workflows/lead-intake";
 import { escalateNoShow, recoverNoShow } from "@/server/workflows/no-show";
 import { processDischarge, requestFeedback, sendDischargeReminder } from "@/server/workflows/discharge";
 import { sendConsultFollowupReminder } from "@/server/clinic/consultation";
+import { sendInvoiceDueReminder } from "@/server/billing/invoices";
 
 /** Thrown for failures that will never succeed on retry (bad payload, unknown job type). */
 export class PermanentJobError extends Error {
@@ -61,6 +62,10 @@ const handlers: Record<string, (payload: unknown, ctx: JobContext) => Promise<vo
   [JOB.consultFollowupReminder]: async (payload) => {
     const p = parse(z.object({ consultation_id: z.string(), followup_date: z.string() }), payload);
     await sendConsultFollowupReminder(p.consultation_id, p.followup_date);
+  },
+  [JOB.invoiceDue]: async (payload) => {
+    const { invoice_id } = parse(z.object({ invoice_id: z.string() }), payload);
+    await sendInvoiceDueReminder(invoice_id);
   },
   [JOB.feedbackRequest]: async (payload) => {
     const { discharge_id } = parse(z.object({ discharge_id: z.string() }), payload);
