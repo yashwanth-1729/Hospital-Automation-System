@@ -5,6 +5,7 @@ import { formatDateTime } from "@/lib/time";
 import { generateDailySummary } from "@/server/ai/summary";
 import { getReport, summaryMetrics } from "@/server/reports";
 import { generateSummaryAction } from "./actions";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Reports" };
 
@@ -37,6 +38,7 @@ function Bars({ trend }: { trend: { day: string; leads: number; booked: number }
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   await connection();
+  await requireStaff("reports.view");
   const requested = Number((await searchParams).days);
   const days = RANGES.includes(requested) ? requested : 7;
 

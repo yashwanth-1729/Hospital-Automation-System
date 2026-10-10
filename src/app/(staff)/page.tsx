@@ -2,7 +2,9 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { AutoRefresh } from "@/components/client";
 import { Card, Empty, LeadStatus, Mono, PageHeader, Severity, Stat, Td, Th } from "@/components/ui";
+import { can, ROLE_LABEL, type Role } from "@/lib/rbac";
 import { formatDateTime } from "@/lib/time";
+import { requireStaff } from "@/server/auth/guard";
 import { getDashboardStats, getNoShowStats, listExceptions, listLeads } from "@/server/queries";
 
 export const metadata = { title: "Dashboard" };
@@ -14,8 +16,22 @@ function formatDuration(seconds: number | null): string {
   return `${(seconds / 3600).toFixed(1)}h`;
 }
 
+function RoleHome({ name, role }: { name: string; role: Role }) {
+  return (
+    <>
+      <PageHeader title={`Welcome, ${name}`} description={`Signed in as ${ROLE_LABEL[role]}.`} />
+      <Card>
+        <Empty>Your workspace appears in the menu on the left.</Empty>
+      </Card>
+    </>
+  );
+}
+
 export default async function DashboardPage() {
   await connection();
+  const user = await requireStaff("dashboard.view");
+  // Operational figures are for the people who run enquiries; everyone else gets a home of their own.
+  if (!can(user.role, "leads.manage")) return <RoleHome name={user.full_name} role={user.role} />;
   const [stats, noShow, leads, exceptions] = await Promise.all([
     getDashboardStats(),
     getNoShowStats(),

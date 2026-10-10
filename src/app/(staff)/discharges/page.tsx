@@ -5,6 +5,7 @@ import { maskPhone } from "@/lib/phone";
 import { formatDateOnly, formatDateTime } from "@/lib/time";
 import { listDepartments, listDischarges } from "@/server/queries";
 import { DischargeForm } from "./form";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Discharges" };
 
@@ -12,6 +13,7 @@ const STATUS_TONE = { scheduled: "ok", needs_review: "warn", new: "info", closed
 
 export default async function DischargesPage() {
   await connection();
+  await requireStaff("discharges.manage");
   const [discharges, departments] = await Promise.all([listDischarges(), listDepartments()]);
 
   return (

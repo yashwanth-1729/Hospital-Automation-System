@@ -8,6 +8,7 @@ import { resolveDepartment } from "@/server/ai/rules";
 import { getLead, getTimeline, listDepartments, listMessages } from "@/server/queries";
 import { listOpenSlots } from "@/server/workflows/scheduling";
 import { BookLead, type DepartmentSlots } from "./book";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Lead" };
 
@@ -58,6 +59,7 @@ function eventSummary(action: string, d: Record<string, unknown> | null): string
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
+  await requireStaff("leads.manage");
   const { id } = await params;
   const lead = await getLead(id);
   if (!lead) notFound();

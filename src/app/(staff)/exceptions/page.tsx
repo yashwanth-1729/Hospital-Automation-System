@@ -5,11 +5,13 @@ import { Badge, Card, Empty, Mono, PageHeader, Severity } from "@/components/ui"
 import { formatDateTime } from "@/lib/time";
 import { listExceptions } from "@/server/queries";
 import { resolveExceptionAction } from "./actions";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Exceptions" };
 
 export default async function ExceptionsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   await connection();
+  await requireStaff("exceptions.manage");
   const view = (await searchParams).view === "resolved" ? "resolved" : "open";
   const items = await listExceptions(view);
   const now = Date.now();

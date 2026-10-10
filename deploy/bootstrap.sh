@@ -12,6 +12,7 @@
 #   WA_PHONE_NUMBER_ID=...    all three of these switch WhatsApp from the demo phone to real
 #   WA_ACCESS_TOKEN=...       sending. Leave them out until the templates are approved.
 #   WA_APP_SECRET=...
+#   ADMIN_EMAIL=you@hospital  sign-in email for the first administrator (default admin@<domain>).
 #   DEMO_DATA=1               load a month of fictional history, into an EMPTY database only.
 #
 # Safe to run again: it pulls the latest code and restarts. It never replaces an existing .env
@@ -123,13 +124,10 @@ set_env() { # KEY VALUE: replace the line if present, append it if not
 if [ "$FRESH_ENV" -eq 1 ]; then
   say "Writing the configuration"
   install -m 600 -o "$APP_USER" -g "$APP_USER" "$APP_DIR/.env.example" "$ENV_FILE"
-  DASH_PASS="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-16)"
-
   set_env DATABASE_URL "postgresql://$DB_USER:$DB_PASS@127.0.0.1:5432/$DB_NAME"
   set_env TEST_DATABASE_URL ""
   set_env POSTGRES_PASSWORD ""
   set_env PUBLIC_BASE_URL "https://$DOMAIN"
-  set_env DASHBOARD_PASSWORD "$DASH_PASS"
   set_env WEBHOOK_SECRET "$(openssl rand -hex 24)"
   set_env WA_VERIFY_TOKEN "$(openssl rand -hex 16)"
 
@@ -158,6 +156,16 @@ departments="$(sudo -u postgres psql -d "$DB_NAME" -qtAX -c 'SELECT count(*) FRO
 if [ "$departments" = "0" ]; then
   echo "loading the demonstration departments, doctors and appointment slots"
   as_app bash -c "cd '$APP_DIR' && npm run db:seed"
+fi
+
+ADMIN_PASSWORD=""
+admins="$(sudo -u postgres psql -d "$DB_NAME" -qtAX -c "SELECT count(*) FROM staff_users WHERE role = 'admin' AND active" 2>/dev/null || echo 0)"
+if [ "$admins" = "0" ]; then
+  ADMIN_EMAIL="${ADMIN_EMAIL:-admin@$DOMAIN}"
+  say "Creating the first administrator"
+  created="$(as_app bash -c "cd '$APP_DIR' && npm run --silent user:create -- --role admin --name Administrator --email '$ADMIN_EMAIL'")"
+  ADMIN_PASSWORD="$(printf '%s\n' "$created" | sed -n 's/^Temporary password: //p')"
+  [ -n "$ADMIN_PASSWORD" ] || die "could not create the administrator: $created"
 fi
 
 leads="$(sudo -u postgres psql -d "$DB_NAME" -qtAX -c 'SELECT count(*) FROM leads' 2>/dev/null || echo 0)"
@@ -221,8 +229,7 @@ as_app bash -c "cd '$APP_DIR' && npm run preflight" || true
 
 cert=0
 for _ in $(seq 1 15); do
-  if curl -fsS -m 8 -o /dev/null "https://$DOMAIN/api/health" 2>/dev/null || \
-     [ "$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "https://$DOMAIN/" 2>/dev/null)" = "200" ]; then cert=1; break; fi
+  if [ "$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "https://$DOMAIN/login" 2>/dev/null)" = "200" ]; then cert=1; break; fi
   sleep 4
 done
 
@@ -233,14 +240,15 @@ cat <<EOF
 
    Address        https://$DOMAIN  $( [ "$cert" -eq 1 ] && echo "(HTTPS working)" || echo "(certificate still being issued: try again in a minute)" )
    Patient form   https://$DOMAIN/enquiry
-   Staff login    user: admin
 EOF
-if [ "$FRESH_ENV" -eq 1 ]; then
+if [ -n "$ADMIN_PASSWORD" ]; then
   cat <<EOF
-                  password: $DASH_PASS     <- shown once; it is also in $ENV_FILE
+   Staff login    email:    $ADMIN_EMAIL
+                  password: $ADMIN_PASSWORD
+                  (temporary, shown only once: you choose your own at first sign-in)
 EOF
 else
-  echo "                  password: unchanged (see DASHBOARD_PASSWORD in $ENV_FILE)"
+  echo "   Staff login    unchanged. List or recover accounts: cd $APP_DIR && sudo -u $APP_USER npm run user:list"
 fi
 cat <<EOF
 

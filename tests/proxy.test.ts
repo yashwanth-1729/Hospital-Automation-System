@@ -5,20 +5,17 @@ import { proxy } from "@/proxy";
 const get = (path: string, init: ConstructorParameters<typeof NextRequest>[1] = {}) =>
   new NextRequest(`https://care.example.com${path}`, init);
 const passesThrough = (res: Response) => res.headers.get("x-middleware-next") === "1";
+const withSession = { headers: { cookie: "nit_session=abc123" } };
 
 let savedUrl: string | undefined;
-let savedPassword: string | undefined;
 
 beforeEach(() => {
   savedUrl = process.env.DATABASE_URL;
-  savedPassword = process.env.DASHBOARD_PASSWORD;
 });
 
 afterEach(() => {
   if (savedUrl === undefined) delete process.env.DATABASE_URL;
   else process.env.DATABASE_URL = savedUrl;
-  if (savedPassword === undefined) delete process.env.DASHBOARD_PASSWORD;
-  else process.env.DASHBOARD_PASSWORD = savedPassword;
 });
 
 describe("with no database attached (a preview host)", () => {
@@ -26,7 +23,7 @@ describe("with no database attached (a preview host)", () => {
     delete process.env.DATABASE_URL;
   });
 
-  it.each(["/", "/leads", "/enquiry", "/r/some-token", "/reports"])("explains itself at %s instead of crashing", async (path) => {
+  it.each(["/", "/leads", "/enquiry", "/login", "/r/some-token", "/reports"])("explains itself at %s instead of crashing", async (path) => {
     const res = proxy(get(path));
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toMatch(/text\/html/);
@@ -51,14 +48,6 @@ describe("with no database attached (a preview host)", () => {
     const res = proxy(get("/enquiry", { method: "POST" }));
     expect(res.status).toBe(503);
   });
-
-  it("shows the same static page whether or not a dashboard password is set", async () => {
-    // The page is static and holds no data, so there is nothing to protect behind a login.
-    process.env.DASHBOARD_PASSWORD = "secret";
-    const res = proxy(get("/"));
-    expect(res.status).toBe(200);
-    expect(await res.text()).toContain("no database attached");
-  });
 });
 
 describe("with a database attached", () => {
@@ -66,46 +55,50 @@ describe("with a database attached", () => {
     process.env.DATABASE_URL = "postgresql://user:pass@localhost:5432/db";
   });
 
-  it("does nothing when no dashboard password is set", () => {
-    delete process.env.DASHBOARD_PASSWORD;
-    expect(passesThrough(proxy(get("/")))).toBe(true);
+  it("sends signed-out visitors to the sign-in page, remembering where they were going", () => {
+    const res = proxy(get("/appointments"));
+    expect(res.status).toBe(307);
+    const location = new URL(res.headers.get("location")!);
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("next")).toBe("/appointments");
   });
 
-  it("asks for a password on staff pages when one is set", () => {
-    process.env.DASHBOARD_PASSWORD = "secret";
-    for (const path of ["/", "/leads", "/reports", "/audits", "/exceptions"]) {
-      const res = proxy(get(path));
-      expect(res.status, path).toBe(401);
-      expect(res.headers.get("www-authenticate")).toMatch(/Basic/);
+  it("does not add a next parameter for the home page", () => {
+    const location = new URL(proxy(get("/")).headers.get("location")!);
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.has("next")).toBe(false);
+  });
+
+  it("redirects every staff page when there is no session cookie", () => {
+    for (const path of ["/", "/leads", "/reports", "/audits", "/exceptions", "/admin/users", "/account"]) {
+      expect(proxy(get(path)).status, path).toBe(307);
     }
   });
 
-  it("does not let a path that merely starts with 'r' or 'enquiry' skip the password", () => {
-    process.env.DASHBOARD_PASSWORD = "secret";
+  it("refuses an unauthenticated post with 401 rather than redirecting it", async () => {
+    const res = proxy(get("/appointments", { method: "POST" }));
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({ ok: false, error: "unauthenticated" });
+  });
+
+  it("lets a request carrying a session cookie through to be verified by the page", () => {
+    for (const path of ["/", "/leads", "/admin/users"]) {
+      expect(passesThrough(proxy(get(path, withSession))), path).toBe(true);
+    }
+  });
+
+  it("does not let a path that merely starts with a public prefix skip sign-in", () => {
     // "/reports" begins with "r" and must stay protected; only "/r/<token>" is public.
-    expect(proxy(get("/reports")).status).toBe(401);
-    expect(proxy(get("/enquiry-admin")).status).toBe(401);
+    expect(proxy(get("/reports")).status).toBe(307);
+    expect(proxy(get("/enquiry-admin")).status).toBe(307);
+    expect(proxy(get("/login-help")).status).toBe(307);
+    // An API path gets a machine-readable 401, not a redirect to an HTML page.
     expect(proxy(get("/api/healthcheck-internal")).status).toBe(401);
   });
 
-  it("leaves patient-facing pages and signed webhooks public", () => {
-    process.env.DASHBOARD_PASSWORD = "secret";
-    for (const path of ["/enquiry", "/r/abc123", "/api/webhooks/whatsapp", "/api/webhooks/lead", "/api/health"]) {
+  it("leaves sign-in, patient-facing pages and signed webhooks public", () => {
+    for (const path of ["/login", "/no-access", "/enquiry", "/r/abc123", "/api/webhooks/whatsapp", "/api/webhooks/lead", "/api/health"]) {
       expect(passesThrough(proxy(get(path))), path).toBe(true);
     }
-  });
-
-  it("lets staff in with the right password, including one containing a colon", () => {
-    process.env.DASHBOARD_PASSWORD = "se:cret";
-    const auth = `Basic ${Buffer.from("admin:se:cret").toString("base64")}`;
-    expect(passesThrough(proxy(get("/", { headers: { authorization: auth } })))).toBe(true);
-  });
-
-  it("keeps out the wrong password and the wrong user", () => {
-    process.env.DASHBOARD_PASSWORD = "secret";
-    const wrongPassword = `Basic ${Buffer.from("admin:nope").toString("base64")}`;
-    const wrongUser = `Basic ${Buffer.from("root:secret").toString("base64")}`;
-    expect(proxy(get("/", { headers: { authorization: wrongPassword } })).status).toBe(401);
-    expect(proxy(get("/", { headers: { authorization: wrongUser } })).status).toBe(401);
   });
 });

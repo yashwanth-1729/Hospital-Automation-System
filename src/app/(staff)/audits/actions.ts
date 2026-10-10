@@ -11,8 +11,10 @@ import {
   saveAudit,
   SCORE_DIMENSIONS,
 } from "@/server/audit";
+import { requireStaff } from "@/server/auth/guard";
 
 export async function createAuditAction(formData: FormData) {
+  await requireStaff("audits.manage");
   const hospital = String(formData.get("hospital_name") ?? "").trim();
   if (!hospital) return;
 
@@ -29,6 +31,7 @@ export async function createAuditAction(formData: FormData) {
 
 /** Saves the whole interview form: numbers, scores and notes together. */
 export async function saveAuditAction(formData: FormData) {
+  await requireStaff("audits.manage");
   const id = String(formData.get("audit_id") ?? "");
   if (!id) return;
   const value = (name: string) => String(formData.get(name) ?? "");
@@ -63,6 +66,7 @@ export async function saveAuditAction(formData: FormData) {
 }
 
 export async function deleteAuditAction(formData: FormData) {
+  await requireStaff("audits.manage");
   const id = String(formData.get("audit_id") ?? "");
   if (!id) return;
   await deleteAudit(id);

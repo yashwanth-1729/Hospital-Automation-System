@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cancelAppointment, rescheduleAppointment } from "@/server/workflows/scheduling";
 import { markAttendance, type Attendance } from "@/server/workflows/no-show";
+import { requireStaff } from "@/server/auth/guard";
 
 const ALLOWED: Attendance[] = ["pending", "attended", "no_show"];
 
@@ -12,6 +13,7 @@ function refresh() {
 }
 
 export async function markAttendanceAction(formData: FormData) {
+  await requireStaff("appointments.manage");
   const appointmentId = String(formData.get("appointment_id") ?? "");
   const attendance = String(formData.get("attendance") ?? "") as Attendance;
   if (!appointmentId || !ALLOWED.includes(attendance)) return;
@@ -21,6 +23,7 @@ export async function markAttendanceAction(formData: FormData) {
 }
 
 export async function cancelAppointmentAction(formData: FormData) {
+  await requireStaff("appointments.manage");
   const appointmentId = String(formData.get("appointment_id") ?? "");
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500) || "Cancelled by staff";
   if (!appointmentId) return;
@@ -30,6 +33,7 @@ export async function cancelAppointmentAction(formData: FormData) {
 }
 
 export async function rescheduleAppointmentAction(formData: FormData) {
+  await requireStaff("appointments.manage");
   const appointmentId = String(formData.get("appointment_id") ?? "");
   const slotId = String(formData.get("slot_id") ?? "");
   if (!appointmentId || !slotId) return;

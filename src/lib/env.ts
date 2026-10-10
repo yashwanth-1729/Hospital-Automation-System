@@ -49,7 +49,6 @@ const EnvSchema = z.object({
   RETENTION_ENQUIRY_DAYS: z.coerce.number().int().min(7).default(365),
 
   WEBHOOK_SECRET: optionalString,
-  DASHBOARD_PASSWORD: optionalString,
 });
 
 export type Env = z.infer<typeof EnvSchema>;

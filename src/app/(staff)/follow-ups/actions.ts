@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { closeFollowUp } from "@/server/workflows/no-show";
+import { requireStaff } from "@/server/auth/guard";
 
 export async function closeFollowUpAction(formData: FormData) {
+  await requireStaff("followups.manage");
   const id = String(formData.get("followup_id") ?? "");
   const outcome = String(formData.get("outcome") ?? "") === "done" ? "done" : "cancelled";
   const note = String(formData.get("note") ?? "").trim().slice(0, 500) || "Closed by staff";

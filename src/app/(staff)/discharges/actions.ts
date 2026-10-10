@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { recordDischarge } from "@/server/workflows/discharge";
+import { requireStaff } from "@/server/auth/guard";
 
 export type DischargeState =
   | { status: "idle" }
@@ -9,6 +10,7 @@ export type DischargeState =
   | { status: "done"; dischargeId: string };
 
 export async function recordDischargeAction(_prev: DischargeState, form: FormData): Promise<DischargeState> {
+  await requireStaff("discharges.manage");
   const result = await recordDischarge({
     full_name: String(form.get("full_name") ?? ""),
     phone: String(form.get("phone") ?? ""),

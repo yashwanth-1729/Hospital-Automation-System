@@ -4,6 +4,7 @@ import { Badge, Card, Empty, PageHeader, Td, Th } from "@/components/ui";
 import { formatDateOnly } from "@/lib/time";
 import { buildReport, formatRupees, listAudits } from "@/server/audit";
 import { createAuditAction } from "./actions";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Audits" };
 
@@ -11,6 +12,7 @@ const inputClass = "mt-1 w-full rounded-lg border border-border bg-surface px-3 
 
 export default async function AuditsPage() {
   await connection();
+  await requireStaff("audits.manage");
   const audits = await listAudits();
 
   return (

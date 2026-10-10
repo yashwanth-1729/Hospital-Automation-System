@@ -5,6 +5,7 @@ import { Card, Empty, LeadStatus, PageHeader, Td, Th } from "@/components/ui";
 import { maskPhone } from "@/lib/phone";
 import { formatDateTime, formatSlot } from "@/lib/time";
 import { listLeads } from "@/server/queries";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Leads" };
 
@@ -18,6 +19,7 @@ const FILTERS = [
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   await connection();
+  await requireStaff("leads.manage");
   const { status } = await searchParams;
   const valid = FILTERS.some((f) => f.value === status) ? status : undefined;
   const leads = await listLeads({ status: valid, limit: 200 });

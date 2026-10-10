@@ -1,17 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { HOLDING_PAGE } from "@/lib/holding-page";
+import { SESSION_COOKIE } from "@/lib/session-cookie";
 
 /**
  * Runs before every page and API route.
  *
  * 1. With no database configured (a preview host such as Vercel), show a plain explanation
  *    instead of letting every page crash with a 500.
- * 2. Otherwise, optional HTTP basic auth for the staff console (user "admin", password
- *    DASHBOARD_PASSWORD). The patient form, feedback links, the webhooks (which verify their
- *    own secret or signature) and the health check stay public.
+ * 2. Otherwise, send people without a session cookie to the sign-in page. This is only a
+ *    courtesy redirect: whether the cookie is genuine, and what its owner may do, is decided
+ *    by `requireStaff()` against the database on every page and action.
+ *
+ * The patient form, feedback links, sign-in, the webhooks (which verify their own secret or
+ * signature) and the health check are public.
  */
 
-const PUBLIC_PATHS = ["/enquiry", "/r/", "/api/webhooks/", "/api/health"];
+const PUBLIC_PATHS = ["/login", "/no-access", "/enquiry", "/r/", "/api/webhooks/", "/api/health"];
 
 function isPublic(path: string): boolean {
   return PUBLIC_PATHS.some((p) => (p.endsWith("/") ? path.startsWith(p) : path === p || path.startsWith(`${p}/`)));
@@ -42,21 +46,17 @@ function notConnected(req: NextRequest): NextResponse {
 
 export function proxy(req: NextRequest) {
   if (!process.env.DATABASE_URL) return notConnected(req);
-  if (isPublic(req.nextUrl.pathname)) return NextResponse.next();
 
-  const password = process.env.DASHBOARD_PASSWORD;
-  if (!password) return NextResponse.next();
+  const path = req.nextUrl.pathname;
+  if (isPublic(path)) return NextResponse.next();
+  if (req.cookies.get(SESSION_COOKIE)?.value) return NextResponse.next();
 
-  const header = req.headers.get("authorization") ?? "";
-  if (header.startsWith("Basic ")) {
-    const decoded = atob(header.slice(6));
-    const sep = decoded.indexOf(":"); // Passwords may contain ':'; the username may not.
-    if (decoded.slice(0, sep) === "admin" && decoded.slice(sep + 1) === password) return NextResponse.next();
+  if ((req.method === "GET" || req.method === "HEAD") && !path.startsWith("/api/")) {
+    const login = new URL("/login", req.url);
+    if (path !== "/") login.searchParams.set("next", path + req.nextUrl.search);
+    return NextResponse.redirect(login);
   }
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="NIT Care Ops"' },
-  });
+  return NextResponse.json({ ok: false, error: "unauthenticated" }, { status: 401, headers: { "cache-control": "no-store" } });
 }
 
 export const config = {

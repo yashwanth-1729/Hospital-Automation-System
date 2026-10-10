@@ -3,17 +3,22 @@ import { connection } from "next/server";
 import { AutoRefresh } from "@/components/client";
 import { Badge, Card, Empty, PageHeader, Td, Th } from "@/components/ui";
 import { maskPhone } from "@/lib/phone";
+import { can } from "@/lib/rbac";
 import { formatDateTime, formatSlot } from "@/lib/time";
 import { listAppointments, listDepartments } from "@/server/queries";
 import { listOpenSlots } from "@/server/workflows/scheduling";
 import { formatSlot as slotLabel } from "@/lib/time";
 import { markAttendanceAction } from "./actions";
 import { RowActions, type SlotOption } from "./row-actions";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Appointments" };
 
 export default async function AppointmentsPage() {
   await connection();
+  const user = await requireStaff("appointments.view");
+  // Nurses and doctors can see the day's list; changing it is the front desk's job.
+  const canManage = can(user.role, "appointments.manage");
   const [appts, departments] = await Promise.all([listAppointments(), listDepartments()]);
 
   // Open slots per department, so each row's reschedule picker is ready without another round trip.
@@ -42,8 +47,8 @@ export default async function AppointmentsPage() {
                   <Th>Patient</Th>
                   <Th>Doctor</Th>
                   <Th>Status</Th>
-                  <Th>Attendance</Th>
-                  <Th>Actions</Th>
+                  {canManage && <Th>Attendance</Th>}
+                  {canManage && <Th>Actions</Th>}
                   <Th>Reminders</Th>
                 </tr>
               </thead>
@@ -69,7 +74,7 @@ export default async function AppointmentsPage() {
                         <Badge tone={a.attendance_status === "no_show" ? "danger" : "ok"}>{a.attendance_status.replace("_", "-")}</Badge>
                       )}
                     </Td>
-                    <Td>
+                    {canManage && <Td>
                       {a.status === "booked" && (
                         <form action={markAttendanceAction} className="flex gap-1.5">
                           <input type="hidden" name="appointment_id" value={a.appointment_id} />
@@ -89,12 +94,12 @@ export default async function AppointmentsPage() {
                           )}
                         </form>
                       )}
-                    </Td>
-                    <Td>
+                    </Td>}
+                    {canManage && <Td>
                       {a.status === "booked" && a.attendance_status === "pending" && (
                         <RowActions appointmentId={a.appointment_id} slots={slotsByDepartment.get(a.department) ?? []} />
                       )}
-                    </Td>
+                    </Td>}
                     <Td className="text-xs text-muted">
                       <div>24h: {a.reminder_24h_at ? formatDateTime(a.reminder_24h_at) : "pending"}</div>
                       <div>3h: {a.reminder_3h_at ? formatDateTime(a.reminder_3h_at) : "pending"}</div>

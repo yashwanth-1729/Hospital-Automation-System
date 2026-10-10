@@ -1,5 +1,6 @@
 /** Workflow registry. Names follow the blueprint naming convention (section F). */
 export const WORKFLOWS = {
+  access: { name: "HOSPITAL | 00 Staff Access", version: "1.0.0" },
   leadIntake: { name: "HOSPITAL | 01 Lead Intake", version: "1.0.0" },
   appointment: { name: "HOSPITAL | 02 Appointment", version: "1.0.0" },
   noShow: { name: "HOSPITAL | 03 No-Show Recovery", version: "1.0.0" },

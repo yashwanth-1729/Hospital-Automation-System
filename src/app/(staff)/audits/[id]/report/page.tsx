@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { env } from "@/lib/env";
 import { formatDateOnly } from "@/lib/time";
 import { buildReport, formatRupees, getAudit, SCORE_DIMENSIONS } from "@/server/audit";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Audit report" };
 
@@ -18,6 +19,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default async function AuditReportPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
+  await requireStaff("audits.manage");
   const { id } = await params;
   const audit = await getAudit(id);
   if (!audit) notFound();

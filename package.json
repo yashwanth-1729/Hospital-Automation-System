@@ -17,7 +17,11 @@
     "dev:all": "concurrently -k -n web,worker -c cyan,magenta \"next dev\" \"tsx watch src/worker/index.ts\"",
     "db:demo": "tsx scripts/demo-data.ts",
     "retention": "tsx scripts/retention.ts",
-    "preflight": "tsx scripts/preflight.ts"
+    "preflight": "tsx scripts/preflight.ts",
+    "user:create": "tsx scripts/user.ts create",
+    "user:list": "tsx scripts/user.ts list",
+    "user:reset": "tsx scripts/user.ts reset",
+    "user:deactivate": "tsx scripts/user.ts deactivate"
   },
   "dependencies": {
     "dotenv": "^18.0.1",

@@ -82,8 +82,14 @@ async function main(): Promise<void> {
   else pass("AI", `${e.AI_MODEL} with a rules fallback`);
 
   // --- security ---
-  if (!e.DASHBOARD_PASSWORD) fail("Staff console", "DASHBOARD_PASSWORD is not set: anyone with the link can read patient data");
-  else pass("Staff console", "password protected");
+  try {
+    const admins = await pool().query<{ n: number }>(`SELECT count(*)::int AS n FROM staff_users WHERE role = 'admin' AND active`);
+    const everyone = await pool().query<{ n: number }>(`SELECT count(*)::int AS n FROM staff_users WHERE active`);
+    if (admins.rows[0]!.n === 0) fail("Staff console", "no active administrator — create one with npm run user:create");
+    else pass("Staff console", `${everyone.rows[0]!.n} active account(s), ${admins.rows[0]!.n} administrator(s)`);
+  } catch {
+    /* reported above */
+  }
 
   if (!e.WEBHOOK_SECRET) warn("Lead webhook", "WEBHOOK_SECRET is not set: anyone can post leads");
   else pass("Lead webhook", "shared secret required");

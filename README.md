@@ -147,8 +147,11 @@ generated from the same numbers.
 ### Security
 
 - `WEBHOOK_SECRET`: when set, the webhook requires header `x-webhook-secret`.
-- `DASHBOARD_PASSWORD`: when set, the staff console requires basic auth (user `admin`). Set this before exposing
-  the app beyond localhost. Production should sit behind HTTPS.
+- Staff sign in with their own account (email and password, 12-hour sessions, lock-out after five wrong
+  attempts). Roles: administrator, receptionist, doctor, pharmacist, billing, nurse; what each may see and
+  do is defined in `src/lib/rbac.ts`. Create the first administrator with
+  `npm run user:create -- --role admin --name "Your Name" --email you@hospital.com`, then manage everyone
+  from **Staff accounts**. Production should sit behind HTTPS.
 
 ## Retention (DPDP Act 2023)
 

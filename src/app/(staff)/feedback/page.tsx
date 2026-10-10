@@ -3,6 +3,7 @@ import { AutoRefresh } from "@/components/client";
 import { Badge, Card, Empty, PageHeader, Stat } from "@/components/ui";
 import { formatDateTime } from "@/lib/time";
 import { getFeedbackStats, listFeedback } from "@/server/queries";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Feedback" };
 
@@ -17,6 +18,7 @@ function Stars({ rating }: { rating: number }) {
 
 export default async function FeedbackPage() {
   await connection();
+  await requireStaff("feedback.view");
   const [items, stats] = await Promise.all([listFeedback(), getFeedbackStats()]);
   const responseRate = stats.requests_sent ? Math.round((stats.responses / stats.requests_sent) * 100) : null;
 

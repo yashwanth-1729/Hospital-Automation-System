@@ -5,11 +5,13 @@ import { Badge, Card, Empty, PageHeader, Stat } from "@/components/ui";
 import { formatDateTime, formatSlot } from "@/lib/time";
 import { getNoShowStats, listFollowUps } from "@/server/queries";
 import { closeFollowUpAction } from "./actions";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Follow-ups" };
 
 export default async function FollowUpsPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   await connection();
+  await requireStaff("followups.manage");
   const view = (await searchParams).view === "closed" ? "closed" : "open";
   const [items, stats] = await Promise.all([listFollowUps(view), getNoShowStats()]);
   const now = Date.now();

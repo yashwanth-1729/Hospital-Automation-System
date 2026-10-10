@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Card, PageHeader, Stat } from "@/components/ui";
 import { buildReport, formatRupees, getAudit, SCORE_DIMENSIONS } from "@/server/audit";
 import { deleteAuditAction, saveAuditAction } from "../actions";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Audit" };
 
@@ -34,6 +35,7 @@ function Text({ name, label, value, hint, rows = 3 }: { name: string; label: str
 
 export default async function AuditPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
+  await requireStaff("audits.manage");
   const { id } = await params;
   const audit = await getAudit(id);
   if (!audit) notFound();

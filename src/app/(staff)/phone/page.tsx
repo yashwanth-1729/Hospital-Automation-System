@@ -5,11 +5,13 @@ import { Card, Empty, MessageStatus, PageHeader } from "@/components/ui";
 import { env } from "@/lib/env";
 import { formatDateTime } from "@/lib/time";
 import { listMessages, type MessageRow } from "@/server/queries";
+import { requireStaff } from "@/server/auth/guard";
 
 export const metadata = { title: "Demo phone" };
 
 export default async function PhonePage({ searchParams }: { searchParams: Promise<{ to?: string }> }) {
   await connection();
+  await requireStaff("demo.phone");
   const { to } = await searchParams;
   const all = await listMessages({ limit: 500 });
   const e = env();

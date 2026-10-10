@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { audit } from "@/lib/audit";
 import { tx } from "@/lib/db";
 import { resolveException } from "@/lib/exceptions";
+import { requireStaff } from "@/server/auth/guard";
 
 export async function resolveExceptionAction(formData: FormData) {
+  await requireStaff("exceptions.manage");
   const id = String(formData.get("exception_id") ?? "");
   const note = String(formData.get("note") ?? "").trim().slice(0, 1000) || "Resolved by staff";
   if (!id) return;

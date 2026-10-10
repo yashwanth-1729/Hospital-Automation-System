@@ -48,7 +48,6 @@ sudo -u nit npm run db:seed    # departments, doctors and slots; skip if the HMS
 |---|---|
 | `DATABASE_URL` | the password you just set, not the development one |
 | `PUBLIC_BASE_URL` | `https://your-domain` — patient links use it |
-| `DASHBOARD_PASSWORD` | without it, anyone with the link reads patient data |
 | `WEBHOOK_SECRET` | without it, anyone can post leads into the system |
 | `HOSPITAL_NAME`, `HOSPITAL_CONTACT` | spoken to patients in every message |
 | `AI_API_KEY` | OpenRouter, or leave `AI_PROVIDER=rules` |
@@ -56,6 +55,17 @@ sudo -u nit npm run db:seed    # departments, doctors and slots; skip if the HMS
 
 Keep `.env` at mode 600, owned by `nit`. It holds credentials for the hospital's WhatsApp
 account.
+
+Then create the first administrator. There is no shared password: everyone signs in as
+themselves, and the administrator adds the rest from **Staff accounts**.
+
+```bash
+sudo -u nit npm run user:create -- --role admin --name "Your Name" --email you@hospital.com
+```
+
+It prints a temporary password once; you choose your own at first sign-in. If every
+administrator is ever locked out, `npm run user:reset -- --email you@hospital.com` on the
+server recovers access.
 
 ## 4. Services
 
