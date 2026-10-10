@@ -5,6 +5,7 @@ export const WORKFLOWS = {
   appointment: { name: "HOSPITAL | 02 Appointment", version: "1.0.0" },
   noShow: { name: "HOSPITAL | 03 No-Show Recovery", version: "1.0.0" },
   discharge: { name: "HOSPITAL | 04 Discharge Follow-Up", version: "1.0.0" },
+  clinic: { name: "HOSPITAL | 05 Clinical Care", version: "1.0.0" },
   messaging: { name: "HOSPITAL | 90 Messaging", version: "1.0.0" },
   system: { name: "HOSPITAL | 99 System", version: "1.0.0" },
 } as const;

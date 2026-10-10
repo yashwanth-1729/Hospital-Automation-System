@@ -9,6 +9,7 @@ import { logoutAction } from "./account/actions";
 /** One entry per page in the sidebar. A person sees an entry only if their role grants its capability. */
 const NAV: { href: string; label: string; capability: Capability; badge?: "exceptions" }[] = [
   { href: "/", label: "Dashboard", capability: "dashboard.view" },
+  { href: "/reception", label: "Reception", capability: "queue.view" },
   { href: "/leads", label: "Leads", capability: "leads.manage" },
   { href: "/appointments", label: "Appointments", capability: "appointments.view" },
   { href: "/discharges", label: "Discharges", capability: "discharges.manage" },

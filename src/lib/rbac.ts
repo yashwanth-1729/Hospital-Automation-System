@@ -31,6 +31,11 @@ export const CAPABILITIES = [
   "reports.view",
   "audits.manage",
   "demo.phone",
+  // Front desk
+  "patients.view",
+  "patients.register",
+  "queue.view",
+  "queue.manage",
   // Administration
   "users.manage",
 ] as const;
@@ -47,11 +52,15 @@ const GRANTS: Record<Role, readonly Capability[]> = {
     "followups.manage",
     "feedback.view",
     "exceptions.manage",
+    "patients.view",
+    "patients.register",
+    "queue.view",
+    "queue.manage",
   ],
-  doctor: ["dashboard.view", "appointments.view"],
-  nurse: ["dashboard.view", "appointments.view", "discharges.manage"],
-  pharmacist: ["dashboard.view"],
-  billing: ["dashboard.view"],
+  doctor: ["dashboard.view", "appointments.view", "patients.view", "queue.view"],
+  nurse: ["dashboard.view", "appointments.view", "discharges.manage", "patients.view", "queue.view"],
+  pharmacist: ["dashboard.view", "patients.view"],
+  billing: ["dashboard.view", "patients.view"],
 };
 
 export function can(role: Role, capability: Capability): boolean {
