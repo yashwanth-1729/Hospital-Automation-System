@@ -101,6 +101,14 @@ export const TEMPLATES = {
       `Hello ${v.patient_name}, we hope you are recovering well. ` +
       `Could you rate your recent experience at ${v.hospital_name}? It takes less than a minute: ${v.feedback_link}`,
   },
+  CONSULT_COMPLETE_01: {
+    providerName: "consult_complete_01",
+    category: "utility",
+    params: ["patient_name", "hospital_name", "doctor_name", "next_step", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, your consultation with ${v.doctor_name} at ${v.hospital_name} is complete. ` +
+      `${v.next_step} If you have any questions, call ${v.hospital_contact}.`,
+  },
   APPT_REMINDER_01: {
     providerName: "appt_reminder_01",
     category: "utility",

@@ -26,6 +26,67 @@ const SESSION_TIMES: [number, number][] = [
   [10, 0], [10, 30], [11, 0], [11, 30], [12, 0],
   [16, 0], [16, 30], [17, 0],
 ];
+
+/** A small starter formulary of common outpatient medicines. A hospital replaces it with its own. */
+export const DEMO_MEDICINES = [
+  { name: "Paracetamol 500 mg", generic: "Paracetamol", form: "tablet", unit: "tablet" },
+  { name: "Paracetamol 650 mg", generic: "Paracetamol", form: "tablet", unit: "tablet" },
+  { name: "Paracetamol 120 mg/5 ml", generic: "Paracetamol", form: "syrup", unit: "ml" },
+  { name: "Ibuprofen 400 mg", generic: "Ibuprofen", form: "tablet", unit: "tablet" },
+  { name: "Diclofenac 50 mg", generic: "Diclofenac", form: "tablet", unit: "tablet" },
+  { name: "Aceclofenac 100 mg", generic: "Aceclofenac", form: "tablet", unit: "tablet" },
+  { name: "Naproxen 250 mg", generic: "Naproxen", form: "tablet", unit: "tablet" },
+  { name: "Tramadol 50 mg", generic: "Tramadol", form: "capsule", unit: "capsule" },
+  { name: "Amoxicillin 500 mg", generic: "Amoxicillin", form: "capsule", unit: "capsule" },
+  { name: "Amoxicillin + Clavulanic acid 625 mg", generic: "Amoxicillin + Clavulanic acid", form: "tablet", unit: "tablet" },
+  { name: "Azithromycin 500 mg", generic: "Azithromycin", form: "tablet", unit: "tablet" },
+  { name: "Cefixime 200 mg", generic: "Cefixime", form: "tablet", unit: "tablet" },
+  { name: "Ciprofloxacin 500 mg", generic: "Ciprofloxacin", form: "tablet", unit: "tablet" },
+  { name: "Doxycycline 100 mg", generic: "Doxycycline", form: "capsule", unit: "capsule" },
+  { name: "Metronidazole 400 mg", generic: "Metronidazole", form: "tablet", unit: "tablet" },
+  { name: "Cetirizine 10 mg", generic: "Cetirizine", form: "tablet", unit: "tablet" },
+  { name: "Levocetirizine 5 mg", generic: "Levocetirizine", form: "tablet", unit: "tablet" },
+  { name: "Montelukast 10 mg", generic: "Montelukast", form: "tablet", unit: "tablet" },
+  { name: "Pantoprazole 40 mg", generic: "Pantoprazole", form: "tablet", unit: "tablet" },
+  { name: "Omeprazole 20 mg", generic: "Omeprazole", form: "capsule", unit: "capsule" },
+  { name: "Ranitidine 150 mg", generic: "Ranitidine", form: "tablet", unit: "tablet" },
+  { name: "Domperidone 10 mg", generic: "Domperidone", form: "tablet", unit: "tablet" },
+  { name: "Ondansetron 4 mg", generic: "Ondansetron", form: "tablet", unit: "tablet" },
+  { name: "Oral rehydration salts", generic: "Oral rehydration salts", form: "sachet", unit: "sachet" },
+  { name: "Metformin 500 mg", generic: "Metformin", form: "tablet", unit: "tablet" },
+  { name: "Glimepiride 2 mg", generic: "Glimepiride", form: "tablet", unit: "tablet" },
+  { name: "Amlodipine 5 mg", generic: "Amlodipine", form: "tablet", unit: "tablet" },
+  { name: "Telmisartan 40 mg", generic: "Telmisartan", form: "tablet", unit: "tablet" },
+  { name: "Losartan 50 mg", generic: "Losartan", form: "tablet", unit: "tablet" },
+  { name: "Atenolol 50 mg", generic: "Atenolol", form: "tablet", unit: "tablet" },
+  { name: "Metoprolol 50 mg", generic: "Metoprolol", form: "tablet", unit: "tablet" },
+  { name: "Atorvastatin 20 mg", generic: "Atorvastatin", form: "tablet", unit: "tablet" },
+  { name: "Rosuvastatin 10 mg", generic: "Rosuvastatin", form: "tablet", unit: "tablet" },
+  { name: "Aspirin 75 mg", generic: "Aspirin", form: "tablet", unit: "tablet" },
+  { name: "Clopidogrel 75 mg", generic: "Clopidogrel", form: "tablet", unit: "tablet" },
+  { name: "Furosemide 40 mg", generic: "Furosemide", form: "tablet", unit: "tablet" },
+  { name: "Salbutamol 100 mcg inhaler", generic: "Salbutamol", form: "inhaler", unit: "puff" },
+  { name: "Levothyroxine 50 mcg", generic: "Levothyroxine", form: "tablet", unit: "tablet" },
+  { name: "Vitamin D3 60000 IU", generic: "Cholecalciferol", form: "sachet", unit: "sachet" },
+  { name: "Calcium + Vitamin D3", generic: "Calcium carbonate + Cholecalciferol", form: "tablet", unit: "tablet" },
+  { name: "Multivitamin", generic: "Multivitamin", form: "capsule", unit: "capsule" },
+  { name: "Folic acid 5 mg", generic: "Folic acid", form: "tablet", unit: "tablet" },
+  { name: "Iron + Folic acid", generic: "Ferrous ascorbate + Folic acid", form: "tablet", unit: "tablet" },
+  { name: "Clotrimazole 1% cream", generic: "Clotrimazole", form: "cream", unit: "application" },
+  { name: "Betamethasone 0.05% cream", generic: "Betamethasone", form: "cream", unit: "application" },
+  { name: "Mupirocin 2% ointment", generic: "Mupirocin", form: "ointment", unit: "application" },
+  { name: "Fusidic acid 2% cream", generic: "Fusidic acid", form: "cream", unit: "application" },
+  { name: "Permethrin 5% lotion", generic: "Permethrin", form: "lotion", unit: "application" },
+  { name: "Itraconazole 100 mg", generic: "Itraconazole", form: "capsule", unit: "capsule" },
+  { name: "Fluconazole 150 mg", generic: "Fluconazole", form: "tablet", unit: "tablet" },
+  { name: "Pregabalin 75 mg", generic: "Pregabalin", form: "capsule", unit: "capsule" },
+  { name: "Thiocolchicoside 4 mg", generic: "Thiocolchicoside", form: "tablet", unit: "tablet" },
+  { name: "Diclofenac 1% gel", generic: "Diclofenac", form: "gel", unit: "application" },
+  { name: "Ambroxol 30 mg/5 ml", generic: "Ambroxol", form: "syrup", unit: "ml" },
+  { name: "Dextromethorphan syrup", generic: "Dextromethorphan", form: "syrup", unit: "ml" },
+  { name: "Povidone-iodine 5% solution", generic: "Povidone-iodine", form: "solution", unit: "application" },
+];
+
 const SLOT_MINUTES = 30;
 
 export async function seed(connectionString: string, opts: { days?: number; quiet?: boolean } = {}) {
@@ -46,6 +107,14 @@ export async function seed(connectionString: string, opts: { days?: number; quie
         `INSERT INTO doctors (doctor_id, department_id, full_name) VALUES ($1, $2, $3)
          ON CONFLICT (doctor_id) DO UPDATE SET full_name = EXCLUDED.full_name, department_id = EXCLUDED.department_id`,
         [doc.id, doc.dept, doc.name],
+      );
+    }
+
+    for (const [i, m] of DEMO_MEDICINES.entries()) {
+      await client.query(
+        `INSERT INTO medicines (medicine_id, name, generic_name, form, unit) VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (lower(name)) DO NOTHING`,
+        [`MED-${String(i + 1).padStart(3, "0")}`, m.name, m.generic, m.form, m.unit],
       );
     }
 
@@ -70,7 +139,7 @@ export async function seed(connectionString: string, opts: { days?: number; quie
     }
     await client.query("COMMIT");
     if (!opts.quiet) {
-      console.log(`seeded ${DEMO_DEPARTMENTS.length} departments, ${DEMO_DOCTORS.length} doctors, ${created} new slots (${days} days)`);
+      console.log(`seeded ${DEMO_DEPARTMENTS.length} departments, ${DEMO_DOCTORS.length} doctors, ${DEMO_MEDICINES.length} medicines, ${created} new slots (${days} days)`);
     }
   } catch (err) {
     await client.query("ROLLBACK");

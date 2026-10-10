@@ -10,6 +10,7 @@ import { logoutAction } from "./account/actions";
 const NAV: { href: string; label: string; capability: Capability; badge?: "exceptions" }[] = [
   { href: "/", label: "Dashboard", capability: "dashboard.view" },
   { href: "/reception", label: "Reception", capability: "queue.view" },
+  { href: "/consult", label: "Consultation", capability: "records.view" },
   { href: "/leads", label: "Leads", capability: "leads.manage" },
   { href: "/appointments", label: "Appointments", capability: "appointments.view" },
   { href: "/discharges", label: "Discharges", capability: "discharges.manage" },

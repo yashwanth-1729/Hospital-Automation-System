@@ -104,7 +104,7 @@ export default async function ReceptionPage({
                             {r.priority === "urgent" && <div><Badge tone="danger">Urgent</Badge></div>}
                           </Td>
                           <Td>
-                            <div className="font-medium">{r.patient_name}</div>
+                            <Link href={`/patients/${r.patient_id}`} className="font-medium hover:text-primary">{r.patient_name}</Link>
                             <div className="text-xs text-muted">
                               {r.uhid} · {formatAge(r.date_of_birth, r.dob_estimated)}
                               {r.gender ? ` · ${r.gender}` : ""}
@@ -188,7 +188,7 @@ export default async function ReceptionPage({
                   <li key={p.patient_id} className="space-y-2 px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-sm font-medium">{p.full_name}</div>
+                        <Link href={`/patients/${p.patient_id}`} className="text-sm font-medium hover:text-primary">{p.full_name}</Link>
                         <div className="text-xs text-muted">
                           {p.uhid} · {formatAge(p.date_of_birth, p.dob_estimated)}
                           {p.gender ? ` · ${p.gender}` : ""} · <span className="num">{maskPhone(p.phone)}</span>
