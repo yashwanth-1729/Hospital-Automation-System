@@ -118,6 +118,38 @@ export async function seed(connectionString: string, opts: { days?: number; quie
       );
     }
 
+    // Starter stock so the pharmacy has something to dispense in a demo. Only for medicines
+    // that have no batches yet, so re-running the seed never doubles anything.
+    const today0 = istDateString();
+    const stocked = await client.query<{ medicine_id: string; name: string }>(
+      `SELECT m.medicine_id, m.name FROM medicines m
+        WHERE NOT EXISTS (SELECT 1 FROM medicine_batches b WHERE b.medicine_id = m.medicine_id)`,
+    );
+    for (const m of stocked.rows) {
+      const h = [...m.name].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
+      const price = 2 + (h % 180) / 4; // Rs 2 to Rs 47 per unit, stable per medicine
+      const batches: [string, number, number][] = [
+        [`A${(h % 900) + 100}`, 120 + (h % 5) * 40, 110],  // expires in ~4 months
+        [`B${(h % 700) + 200}`, 200 + (h % 7) * 50, 540],  // expires in ~18 months
+      ];
+      for (const [number, qty, days] of batches) {
+        const id = `BAT-${m.medicine_id}-${number}`;
+        await client.query(
+          `INSERT INTO medicine_batches (batch_id, medicine_id, batch_number, expiry_date, quantity_received, quantity_on_hand, unit_cost, unit_price, supplier)
+           VALUES ($1, $2, $3, $4::date + $5::int, $6, $6, $7, $8, 'Demo Distributors')
+           ON CONFLICT (medicine_id, batch_number) DO NOTHING`,
+          [id, m.medicine_id, number, today0, days, qty, Math.round(price * 0.7 * 100) / 100, Math.round(price * 100) / 100],
+        );
+        await client.query(
+          `INSERT INTO stock_movements (medicine_id, batch_id, kind, quantity, reference)
+           SELECT $1, $2, 'receipt', $3, 'opening stock'
+            WHERE EXISTS (SELECT 1 FROM medicine_batches WHERE batch_id = $2)
+              AND NOT EXISTS (SELECT 1 FROM stock_movements WHERE batch_id = $2)`,
+          [m.medicine_id, id, qty],
+        );
+      }
+    }
+
     let created = 0;
     const today = istDateString();
     for (let i = 0; i < days; i++) {

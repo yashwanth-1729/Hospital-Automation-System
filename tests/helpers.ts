@@ -3,6 +3,7 @@ import { addDays, istAt, istDateString } from "@/lib/time";
 import { DEMO_DEPARTMENTS, DEMO_DOCTORS } from "../scripts/seed";
 
 const TABLES = [
+  "dispensation_items", "dispensations", "stock_movements", "medicine_batches",
   "prescription_items", "prescriptions", "consultation_addenda", "consultations", "vitals", "medicines",
   "visit_tokens", "visits", "audit_log", "communication_log", "exceptions", "jobs", "follow_ups", "diagnostic_tasks",
   "feedback", "feedback_requests", "discharges", "daily_summaries",

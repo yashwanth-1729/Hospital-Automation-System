@@ -11,6 +11,7 @@ const NAV: { href: string; label: string; capability: Capability; badge?: "excep
   { href: "/", label: "Dashboard", capability: "dashboard.view" },
   { href: "/reception", label: "Reception", capability: "queue.view" },
   { href: "/consult", label: "Consultation", capability: "records.view" },
+  { href: "/pharmacy", label: "Pharmacy", capability: "pharmacy.dispense" },
   { href: "/leads", label: "Leads", capability: "leads.manage" },
   { href: "/appointments", label: "Appointments", capability: "appointments.view" },
   { href: "/discharges", label: "Discharges", capability: "discharges.manage" },

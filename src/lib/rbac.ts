@@ -40,6 +40,9 @@ export const CAPABILITIES = [
   "records.view",
   "vitals.record",
   "consult.write",
+  // Pharmacy
+  "pharmacy.dispense",
+  "pharmacy.stock",
   // Administration
   "users.manage",
 ] as const;
@@ -63,7 +66,7 @@ const GRANTS: Record<Role, readonly Capability[]> = {
   ],
   doctor: ["dashboard.view", "appointments.view", "patients.view", "queue.view", "records.view", "vitals.record", "consult.write"],
   nurse: ["dashboard.view", "appointments.view", "discharges.manage", "patients.view", "queue.view", "records.view", "vitals.record"],
-  pharmacist: ["dashboard.view", "patients.view"],
+  pharmacist: ["dashboard.view", "patients.view", "pharmacy.dispense", "pharmacy.stock"],
   billing: ["dashboard.view", "patients.view"],
 };
 
