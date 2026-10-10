@@ -87,6 +87,13 @@ export const DEMO_MEDICINES = [
   { name: "Povidone-iodine 5% solution", generic: "Povidone-iodine", form: "solution", unit: "application" },
 ];
 
+export const DEMO_WARDS = [
+  { id: "WRD-GEN", name: "General Ward", kind: "general", rate: 800, beds: 12, prefix: "G" },
+  { id: "WRD-SEM", name: "Semi-private Ward", kind: "semi_private", rate: 1800, beds: 6, prefix: "S" },
+  { id: "WRD-PVT", name: "Private Rooms", kind: "private", rate: 3500, beds: 6, prefix: "P" },
+  { id: "WRD-ICU", name: "Intensive Care", kind: "icu", rate: 7500, beds: 4, prefix: "I" },
+];
+
 export const DEMO_SERVICES = [
   { name: "ECG", category: "diagnostic", price: 300 },
   { name: "Chest X-ray", category: "diagnostic", price: 450 },
@@ -127,6 +134,18 @@ export async function seed(connectionString: string, opts: { days?: number; quie
     const FEES: Record<string, number> = { cardiology: 900, dermatology: 600, orthopedics: 700, general_medicine: 400 };
     for (const doc of DEMO_DOCTORS) {
       await client.query(`UPDATE doctors SET consultation_fee = $2 WHERE doctor_id = $1`, [doc.id, FEES[doc.dept] ?? 500]);
+    }
+    for (const w of DEMO_WARDS) {
+      await client.query(
+        `INSERT INTO wards (ward_id, name, kind, daily_rate) VALUES ($1, $2, $3, $4) ON CONFLICT (ward_id) DO NOTHING`,
+        [w.id, w.name, w.kind, w.rate],
+      );
+      for (let i = 1; i <= w.beds; i++) {
+        await client.query(
+          `INSERT INTO beds (bed_id, ward_id, label) VALUES ($1, $2, $3) ON CONFLICT (bed_id) DO NOTHING`,
+          [`BED-${w.prefix}${String(i).padStart(2, "0")}`, w.id, `${w.prefix}-${String(i).padStart(2, "0")}`],
+        );
+      }
     }
     for (const [i, svc] of DEMO_SERVICES.entries()) {
       await client.query(
@@ -197,7 +216,7 @@ export async function seed(connectionString: string, opts: { days?: number; quie
     }
     await client.query("COMMIT");
     if (!opts.quiet) {
-      console.log(`seeded ${DEMO_DEPARTMENTS.length} departments, ${DEMO_DOCTORS.length} doctors, ${DEMO_MEDICINES.length} medicines, ${created} new slots (${days} days)`);
+      console.log(`seeded ${DEMO_DEPARTMENTS.length} departments, ${DEMO_DOCTORS.length} doctors, ${DEMO_MEDICINES.length} medicines, ${DEMO_WARDS.length} wards, ${created} new slots (${days} days)`);
     }
   } catch (err) {
     await client.query("ROLLBACK");

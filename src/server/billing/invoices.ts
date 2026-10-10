@@ -2,6 +2,7 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { many, one, pool, tx, type Db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { stayDays } from "@/lib/bed-days";
 import { newCorrelationId, newId } from "@/lib/ids";
 import { enqueue } from "@/lib/jobs";
 import { METHODS, METHOD_LABEL, type PaymentMethod } from "@/lib/payment-methods";
@@ -164,7 +165,7 @@ function requireDraft(status: InvoiceStatus): void {
 // --- building an invoice -------------------------------------------------------------------------
 
 export interface BillableItem {
-  kind: "consultation" | "pharmacy";
+  kind: "consultation" | "pharmacy" | "bed";
   description: string;
   quantity: number;
   unit_price: number;
@@ -249,6 +250,82 @@ export async function createInvoiceForVisit(actor: Actor, visitId: string): Prom
     }
     await recalc(c, invoiceId);
     await audit(c, { workflow: "clinic", actor: "staff", action: draft ? "invoice.lines_added" : "invoice.created", recordId: invoiceId, details: { lines: items.length } });
+    return { invoiceId, existing: !!draft };
+  });
+}
+
+/** Bed charges for a discharged admission: one line per bed occupied, priced at the rate in force then. */
+export async function unbilledForAdmission(db: Db, admissionId: string): Promise<BillableItem[]> {
+  const adm = await one<{ status: string }>(db, `SELECT status FROM admissions WHERE admission_id = $1`, [admissionId]);
+  if (!adm || adm.status !== "discharged") return [];
+  const stays = await many<{
+    stay_id: string;
+    ward_name: string;
+    bed_label: string;
+    daily_rate: number;
+    started_at: Date;
+    ended_at: Date | null;
+    ended_reason: "transfer" | "discharge" | null;
+  }>(
+    db,
+    `SELECT s.stay_id, w.name AS ward_name, b.label AS bed_label, s.daily_rate::float AS daily_rate, s.started_at, s.ended_at, s.ended_reason
+       FROM bed_stays s JOIN beds b ON b.bed_id = s.bed_id JOIN wards w ON w.ward_id = s.ward_id
+      WHERE s.admission_id = $1
+        AND NOT EXISTS (SELECT 1 FROM invoice_lines l WHERE l.source_ref = 'stay:' || s.stay_id)
+      ORDER BY s.started_at`,
+    [admissionId],
+  );
+  const items: BillableItem[] = [];
+  for (const s of stays) {
+    const days = stayDays({ startedAt: s.started_at, endedAt: s.ended_at, endedReason: s.ended_reason });
+    if (days === 0 || s.daily_rate === 0) continue;
+    items.push({
+      kind: "bed",
+      description: `Bed ${s.bed_label}, ${s.ward_name}`,
+      quantity: days,
+      unit_price: s.daily_rate,
+      source_ref: `stay:${s.stay_id}`,
+    });
+  }
+  return items;
+}
+
+/** A draft for a discharged admission, pre-filled with its bed charges. */
+export async function createInvoiceForAdmission(actor: Actor, admissionId: string): Promise<{ invoiceId: string; existing: boolean }> {
+  need(actor, "billing.manage", "Only billing can create invoices.");
+  return tx(async (c) => {
+    const adm = await one<{ patient_id: string; status: string }>(c, `SELECT patient_id, status FROM admissions WHERE admission_id = $1 FOR UPDATE`, [admissionId]);
+    if (!adm) throw new BillingError("not_found", "That admission does not exist.");
+    if (adm.status !== "discharged") throw new BillingError("wrong_state", "Bed charges are billed once the patient is discharged.");
+
+    const draft = await one<{ invoice_id: string }>(
+      c,
+      `SELECT invoice_id FROM invoices WHERE admission_id = $1 AND status = 'draft' ORDER BY created_at LIMIT 1`,
+      [admissionId],
+    );
+    const items = await unbilledForAdmission(c, admissionId);
+    let invoiceId = draft?.invoice_id;
+    if (!invoiceId) {
+      if (items.length === 0) throw new BillingError("nothing_to_bill", "There is nothing left to bill for this admission.");
+      invoiceId = newId("INV");
+      await c.query(
+        `INSERT INTO invoices (invoice_id, patient_id, admission_id, created_by, correlation_id) VALUES ($1, $2, $3, $4, $5)`,
+        [invoiceId, adm.patient_id, admissionId, actor.user_id, newCorrelationId()],
+      );
+    }
+    const next = await one<{ n: number }>(c, `SELECT COALESCE(max(position), 0)::int AS n FROM invoice_lines WHERE invoice_id = $1`, [invoiceId]);
+    let position = next!.n;
+    for (const it of items) {
+      position += 1;
+      await c.query(
+        `INSERT INTO invoice_lines (line_id, invoice_id, position, kind, description, quantity, unit_price, line_total, source_ref)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, round($6::numeric * $7::numeric, 2), $8)
+         ON CONFLICT (source_ref) DO NOTHING`,
+        [newId("LIN"), invoiceId, position, it.kind, it.description, it.quantity, it.unit_price, it.source_ref],
+      );
+    }
+    await recalc(c, invoiceId);
+    await audit(c, { workflow: "clinic", actor: "staff", action: draft ? "invoice.lines_added" : "invoice.created", recordId: invoiceId, details: { admission_id: admissionId } });
     return { invoiceId, existing: !!draft };
   });
 }

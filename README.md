@@ -1,10 +1,37 @@
 # NIT Hospital Automation
 
-An automation layer that sits **around** a hospital's existing systems (HMS/EMR/CRM) and handles the
-administrative patient journey: enquiry → classification → booking → WhatsApp confirmation → reminders,
-with a staff work queue for everything that needs a person.
+Two layers in one product:
 
-It does **not** diagnose, advise on treatment, or interpret results. Clinical content is always routed to staff.
+1. **Patient communication automation.** Enquiry → classification → booking → WhatsApp confirmation →
+   reminders → no-show recovery → discharge follow-up → feedback, with a staff work queue for everything
+   that needs a person. It sits around a hospital's existing systems, or works on its own.
+2. **A hospital operating system for the OPD and wards**, so the automation has a source of truth:
+   reception and a token queue, the doctor's consultation and e-prescription, a pharmacy with batch stock,
+   billing and payments, wards and beds, and management analytics. Every step feeds the WhatsApp layer
+   (token, prescription ready, receipt, follow-up reminder, discharge follow-up).
+
+The automation never diagnoses or advises on treatment: patient messages are fixed templates. Clinical
+records are written by doctors, behind per-person logins, and every change names the person who made it.
+
+### The patient journey, end to end
+
+```
+ enquiry / walk-in
+      │
+ Reception ─ register (UHID), check in, token ──► queue
+      │
+ Doctor ──── calls in, vitals, case sheet, prescription (allergy check) ──► finish
+      │                                                   │
+ Pharmacy ── dispenses from batches, first-expired-first-out   WhatsApp: consultation done, follow-up reminder
+      │
+ Billing ─── invoice (fee + medicines + services) ──► payment ──► receipt (WhatsApp)
+      │
+ Wards ───── admit, move, discharge ──► discharge follow-up + feedback automation ──► bed charges to billing
+      │
+ Analytics ─ patients, waits, money, diagnoses, occupancy
+```
+
+Each role sees only its own screens (`src/lib/rbac.ts`).
 
 ## Quick start (local)
 
@@ -26,8 +53,17 @@ npm run db:demo               # ~200 enquiries over 30 days, with no-shows, disc
 
 | URL | What |
 |---|---|
+| `/login` | Staff sign-in (per person, with roles) |
 | `/enquiry` | Public patient form for the fictional *DemoCare Multispeciality Hospital* |
 | `/` | Staff dashboard (live) |
+| `/reception`, `/reception/register` | Front desk: queue, expected appointments, patient search and registration |
+| `/consult`, `/consult/<visit>` | Doctor's queue and consultation workspace (vitals, case sheet, prescription) |
+| `/patients/<id>` | Patient record: details, visits, consultations |
+| `/pharmacy`, `/pharmacy/stock` | Dispensing counter, batch stock, receiving, expiry and low-stock |
+| `/billing`, `/billing/<id>`, `/billing/day-book` | Invoices, payments, refunds, day book, printable invoice |
+| `/wards`, `/admissions/<id>` | Bed board, admissions, transfers, discharge |
+| `/analytics` | Hospital analytics: patients, waits, collections, diagnoses, occupancy |
+| `/admin/users` | Staff accounts and roles (administrator) |
 | `/leads/<id>` | Full automation timeline for one enquiry |
 | `/discharges` | Record a discharge and watch post-discharge coordination |
 | `/follow-ups` | Patients being chased after a missed appointment, with recovery KPIs |
@@ -59,6 +95,16 @@ Patient form / webhook
 
 Everything runs on Postgres. There is no n8n/Make dependency: the job queue is a table claimed with
 `FOR UPDATE SKIP LOCKED`, so any number of workers can run safely.
+
+### Invariants the database enforces (and the tests attack)
+
+- A queue token is never issued twice; a patient is never in the same doctor's queue twice.
+- A prescription is locked once finished; later notes are addenda with their author.
+- Stock never goes negative; a batch's count always equals the sum of its movement ledger; expired
+  batches are never dispensed; two counters cannot take the last units.
+- Each billable item is on at most one live invoice; a payment cannot exceed the balance, even with two
+  counters at once; a double-clicked payment form records once; voiding frees the items to be re-billed.
+- A bed holds one patient and a patient is in one bed; a transfer day is charged once.
 
 ## Safety guarantees (each is covered by tests)
 
@@ -176,7 +222,7 @@ npm run preflight
 ```
 
 It fails on the things that actually break deployments — pending migrations, a worker that was
-never started, demo data still present, a development database password, no dashboard password,
+never started, demo data still present, a development database password, no administrator account,
 HTTP instead of HTTPS, WhatsApp still on the demo phone.
 
 ## Tests
@@ -198,3 +244,4 @@ Note: the Docker setup has not yet been run on a machine with Docker installed; 
 | Demo 1: Lead → AI classification → availability → booking → confirmation → reminders | Done |
 | Demo 2: No-show → recovery message → follow-up task → staff escalation | Done |
 | Demo 3: Discharge → approved follow-up → reminder → feedback → service recovery | Done |
+| Beyond the blueprint: reception, consultation, e-prescription, pharmacy, billing, wards, analytics | Done |

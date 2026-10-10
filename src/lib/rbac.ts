@@ -48,6 +48,13 @@ export const CAPABILITIES = [
   "billing.collect",
   "billing.manage",
   "billing.discount_large",
+  // Inpatient
+  "ipd.view",
+  "ipd.admit",
+  "ipd.transfer",
+  "ipd.discharge",
+  "ipd.beds",
+  "ipd.configure",
   // Administration
   "users.manage",
 ] as const;
@@ -70,11 +77,18 @@ const GRANTS: Record<Role, readonly Capability[]> = {
     "queue.manage",
     "billing.view",
     "billing.collect",
+    "ipd.view",
+    "ipd.admit",
+    "ipd.transfer",
+    "ipd.discharge",
   ],
-  doctor: ["dashboard.view", "appointments.view", "patients.view", "queue.view", "records.view", "vitals.record", "consult.write"],
-  nurse: ["dashboard.view", "appointments.view", "discharges.manage", "patients.view", "queue.view", "records.view", "vitals.record"],
+  doctor: ["dashboard.view", "appointments.view", "patients.view", "queue.view", "records.view", "vitals.record", "consult.write", "ipd.view", "ipd.discharge"],
+  nurse: [
+    "dashboard.view", "appointments.view", "discharges.manage", "patients.view", "queue.view", "records.view", "vitals.record",
+    "ipd.view", "ipd.admit", "ipd.transfer", "ipd.discharge", "ipd.beds",
+  ],
   pharmacist: ["dashboard.view", "patients.view", "pharmacy.dispense", "pharmacy.stock"],
-  billing: ["dashboard.view", "patients.view", "billing.view", "billing.collect", "billing.manage"],
+  billing: ["dashboard.view", "patients.view", "billing.view", "billing.collect", "billing.manage", "ipd.view"],
 };
 
 export function can(role: Role, capability: Capability): boolean {

@@ -4,6 +4,7 @@ import { DEMO_DEPARTMENTS, DEMO_DOCTORS } from "../scripts/seed";
 
 const TABLES = [
   "payments", "invoice_lines", "invoices", "services",
+  "bed_stays", "admissions", "beds", "wards",
   "dispensation_items", "dispensations", "stock_movements", "medicine_batches",
   "prescription_items", "prescriptions", "consultation_addenda", "consultations", "vitals", "medicines",
   "visit_tokens", "visits", "audit_log", "communication_log", "exceptions", "jobs", "follow_ups", "diagnostic_tasks",
