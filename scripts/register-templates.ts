@@ -41,12 +41,12 @@ function body(def: TemplateDef): { text: string; example: string[] } {
 
 /**
  * Meta rejects a body that opens or closes with a variable, or has two variables side by side.
- * Punctuation after a final variable ("call {{1}}.") is accepted.
+ * Punctuation after a final variable ("call {{1}}.") does not help: words must follow it.
  */
 function problems(text: string): string[] {
   const out: string[] = [];
   if (/^\s*\{\{\d+\}\}/.test(text)) out.push("starts with a variable");
-  if (/\{\{\d+\}\}\s*$/.test(text)) out.push("ends with a variable");
+  if (/\{\{\d+\}\}[\s.!?,;:]*$/.test(text)) out.push("ends with a variable");
   if (/\{\{\d+\}\}\s*\{\{\d+\}\}/.test(text)) out.push("has adjacent variables");
   if (text.length > 1024) out.push("is longer than 1024 characters");
   return out;

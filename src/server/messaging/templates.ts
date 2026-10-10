@@ -39,7 +39,7 @@ export const TEMPLATES = {
     render: (v) =>
       `Hello ${v.patient_name}, your appointment at ${v.hospital_name} is confirmed.\n` +
       `Department: ${v.department}\nDoctor: ${v.doctor_name}\nDate & time: ${v.slot}\nBooking ID: ${v.appointment_id}\n` +
-      `Please arrive 15 minutes early. To reschedule or cancel, call ${v.hospital_contact}.`,
+      `Please arrive 15 minutes early. To reschedule or cancel, call ${v.hospital_contact}. We look forward to seeing you.`,
   },
   APPT_RESCHEDULED_01: {
     providerName: "appt_rescheduled_01",
@@ -48,7 +48,7 @@ export const TEMPLATES = {
     render: (v) =>
       `Hello ${v.patient_name}, your appointment at ${v.hospital_name} has been rescheduled.\n` +
       `Department: ${v.department}\nDoctor: ${v.doctor_name}\nNew date & time: ${v.slot}\n` +
-      `If this time does not suit you, call ${v.hospital_contact}.`,
+      `If this time does not suit you, call ${v.hospital_contact}. We will be glad to find another time.`,
   },
   APPT_CANCELLED_01: {
     providerName: "appt_cancelled_01",
@@ -56,7 +56,7 @@ export const TEMPLATES = {
     params: ["patient_name", "hospital_name", "slot", "hospital_contact"],
     render: (v) =>
       `Hello ${v.patient_name}, your appointment at ${v.hospital_name} on ${v.slot} has been cancelled. ` +
-      `To book a new time, call ${v.hospital_contact}.`,
+      `To book a new time, call ${v.hospital_contact}. We hope to see you soon.`,
   },
   NOSHOW_RECOVERY_01: {
     providerName: "noshow_recovery_01",
@@ -91,7 +91,7 @@ export const TEMPLATES = {
     params: ["patient_name", "hospital_name", "followup_date", "hospital_contact"],
     render: (v) =>
       `Reminder: ${v.patient_name}, your follow-up visit at ${v.hospital_name} is scheduled for ${v.followup_date}. ` +
-      `To confirm a time or reschedule, call ${v.hospital_contact}.`,
+      `To confirm a time or reschedule, call ${v.hospital_contact}. We look forward to seeing you.`,
   },
   FEEDBACK_REQUEST_01: {
     providerName: "feedback_request_01",
@@ -107,7 +107,7 @@ export const TEMPLATES = {
     params: ["patient_name", "hospital_name", "doctor_name", "next_step", "hospital_contact"],
     render: (v) =>
       `Hello ${v.patient_name}, your consultation with ${v.doctor_name} at ${v.hospital_name} is complete. ` +
-      `${v.next_step} If you have any questions, call ${v.hospital_contact}.`,
+      `${v.next_step} If you have any questions, call ${v.hospital_contact}. Take care and get well soon.`,
   },
   RECEIPT_01: {
     providerName: "receipt_01",
@@ -115,7 +115,7 @@ export const TEMPLATES = {
     params: ["patient_name", "hospital_name", "amount", "invoice_number", "balance_line", "hospital_contact"],
     render: (v) =>
       `Hello ${v.patient_name}, ${v.hospital_name} has received ${v.amount} against invoice ${v.invoice_number}. ` +
-      `${v.balance_line} Questions about your bill? Call ${v.hospital_contact}.`,
+      `${v.balance_line} If you have any questions about your bill, please call ${v.hospital_contact} and our billing team will be glad to help. Thank you for choosing us.`,
   },
   INVOICE_DUE_01: {
     providerName: "invoice_due_01",
@@ -131,7 +131,7 @@ export const TEMPLATES = {
     params: ["patient_name", "hospital_name", "doctor_name", "slot", "hospital_contact"],
     render: (v) =>
       `Reminder: ${v.patient_name}, you have an appointment at ${v.hospital_name} with ${v.doctor_name} on ${v.slot}. ` +
-      `To reschedule, call ${v.hospital_contact}.`,
+      `To reschedule, call ${v.hospital_contact}. We look forward to seeing you.`,
   },
 } as const satisfies Record<string, TemplateDef>;
 
