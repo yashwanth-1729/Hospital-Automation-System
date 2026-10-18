@@ -13,7 +13,7 @@ export const HOLDING_PAGE = /* html */ `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>NIT Care Ops</title>
+<title>DemoCare Hospital</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -47,10 +47,10 @@ export const HOLDING_PAGE = /* html */ `<!doctype html>
 </head>
 <body>
 <main>
-  <div class="brand"><div class="mark">N</div><b>NIT Care Ops</b></div>
+  <div class="brand"><div class="mark">D</div><b>DemoCare Hospital</b></div>
   <h1>This preview has no database attached</h1>
   <p>
-    NIT Care Ops handles a hospital's patient communication: enquiries, appointment booking,
+    DemoCare Hospital handles patient communication: enquiries, appointment booking,
     WhatsApp confirmations and reminders, no-show recovery and discharge follow-up.
   </p>
   <p>

@@ -87,7 +87,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             </svg>
           </div>
           <div className="min-w-0">
-            <div className="text-[15px] leading-tight font-semibold tracking-tight">NIT Care Ops</div>
+            <div className="text-[15px] leading-tight font-semibold tracking-tight">DemoCare Hospital</div>
             <div className="truncate text-xs leading-tight text-muted">{e.HOSPITAL_NAME}</div>
           </div>
         </div>

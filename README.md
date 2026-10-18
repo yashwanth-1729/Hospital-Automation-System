@@ -1,4 +1,4 @@
-# NIT Hospital Automation
+# DemoCare Hospital Automation
 
 Two layers in one product:
 

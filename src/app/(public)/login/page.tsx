@@ -51,7 +51,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <path d="M10 4v12M4 10h12" />
             </svg>
           </span>
-          <span className="text-lg font-semibold tracking-tight">NIT Care Ops</span>
+          <span className="text-lg font-semibold tracking-tight">DemoCare Hospital</span>
         </div>
 
         <div className="relative max-w-md">
