@@ -6,7 +6,7 @@
  * Adding a module means adding capabilities here and granting them; no call site changes.
  */
 
-export const ROLES = ["admin", "receptionist", "doctor", "pharmacist", "billing", "nurse"] as const;
+export const ROLES = ["admin", "receptionist", "doctor", "pharmacist", "billing", "nurse", "radiology"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -16,6 +16,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   pharmacist: "Pharmacist",
   billing: "Billing",
   nurse: "Nurse",
+  radiology: "Radiology",
 };
 
 export const CAPABILITIES = [
@@ -55,6 +56,12 @@ export const CAPABILITIES = [
   "ipd.discharge",
   "ipd.beds",
   "ipd.configure",
+  // Radiology
+  "imaging.order",
+  "imaging.view",
+  "imaging.report",
+  // Assistant
+  "assistant.use",
   // Administration
   "users.manage",
 ] as const;
@@ -82,13 +89,17 @@ const GRANTS: Record<Role, readonly Capability[]> = {
     "ipd.transfer",
     "ipd.discharge",
   ],
-  doctor: ["dashboard.view", "appointments.view", "patients.view", "queue.view", "records.view", "vitals.record", "consult.write", "ipd.view", "ipd.discharge"],
+  doctor: [
+    "dashboard.view", "appointments.view", "patients.view", "queue.view", "records.view", "vitals.record", "consult.write",
+    "ipd.view", "ipd.discharge", "imaging.order", "imaging.view",
+  ],
   nurse: [
     "dashboard.view", "appointments.view", "discharges.manage", "patients.view", "queue.view", "records.view", "vitals.record",
-    "ipd.view", "ipd.admit", "ipd.transfer", "ipd.discharge", "ipd.beds",
+    "ipd.view", "ipd.admit", "ipd.transfer", "ipd.discharge", "ipd.beds", "imaging.view",
   ],
   pharmacist: ["dashboard.view", "patients.view", "pharmacy.dispense", "pharmacy.stock"],
   billing: ["dashboard.view", "patients.view", "billing.view", "billing.collect", "billing.manage", "ipd.view"],
+  radiology: ["dashboard.view", "patients.view", "imaging.view", "imaging.report"],
 };
 
 export function can(role: Role, capability: Capability): boolean {

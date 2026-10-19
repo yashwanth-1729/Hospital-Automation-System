@@ -17,6 +17,7 @@ const PEOPLE = [
   { email: "doctor@democare.test", name: "Dr. Ananya Rao", role: "doctor" as const, doctorId: "DOC-CAR-1" },
   { email: "pharmacy@democare.test", name: "Rohan Kulkarni", role: "pharmacist" as const },
   { email: "billing@democare.test", name: "Meena Krishnan", role: "billing" as const },
+  { email: "radiology@democare.test", name: "Vikram Joshi", role: "radiology" as const },
 ];
 
 async function main() {

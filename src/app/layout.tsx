@@ -6,7 +6,7 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans", display:
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "DemoCare Hospital", template: "%s · DemoCare Hospital" },
+  title: { default: "Clevo", template: "%s · Clevo" },
   description: "Hospital operations and patient communication, in one place",
 };
 

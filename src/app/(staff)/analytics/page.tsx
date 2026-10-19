@@ -4,7 +4,9 @@ import { Card, PageHeader, Stat } from "@/components/ui";
 import { BarChart, RankedList } from "@/components/charts";
 import { pool } from "@/lib/db";
 import { formatDateOnly } from "@/lib/time";
+import { can } from "@/lib/rbac";
 import { requireStaff } from "@/server/auth/guard";
+import { AssistantChat } from "./assistant";
 import { hospitalAnalytics } from "@/server/clinic/analytics";
 import { occupancy } from "@/server/ipd/admissions";
 import { stockOverview } from "@/server/pharmacy/stock";
@@ -21,7 +23,7 @@ const short = (iso: string) => {
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
   await connection();
-  await requireStaff("reports.view");
+  const user = await requireStaff("reports.view");
   const { days: raw } = await searchParams;
   const days = RANGES.find((r) => String(r) === raw) ?? 14;
 
@@ -53,6 +55,12 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           </div>
         }
       />
+
+      {can(user.role, "assistant.use") && (
+        <Card title="Ask Clevo" className="mb-6">
+          <AssistantChat />
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Patients seen" value={a.visits.completed} tone="ok" hint={`${a.visits.walk_in} walk-in · ${a.visits.appointment} booked`} />

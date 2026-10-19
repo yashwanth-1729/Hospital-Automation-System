@@ -10,6 +10,8 @@ import { formatDateOnly, formatDateTime } from "@/lib/time";
 import { requireStaff } from "@/server/auth/guard";
 import { getConsultationForVisit, latestBody, patientHistory, visitVitals } from "@/server/clinic/consultation";
 import { AddendumForm, ConsultForm, VitalsForm } from "./forms";
+import { OrderForm, OrdersList } from "./imaging";
+import { ordersForVisit, STUDY_CATALOGUE } from "@/server/radiology/imaging";
 
 export const metadata = { title: "Consultation" };
 
@@ -64,13 +66,15 @@ export default async function WorkspacePage({
   if (isDoctor && user.doctor_id !== v.doctor_id) redirect("/no-access");
 
   const canWrite = can(user.role, "consult.write") && user.doctor_id === v.doctor_id;
-  const [vitals, consultation, history, body, medicines] = await Promise.all([
+  const [vitals, consultation, history, body, medicines, imaging] = await Promise.all([
     visitVitals(pool(), visitId),
     getConsultationForVisit(pool(), visitId),
     patientHistory(pool(), v.patient_id, { excludeVisitId: visitId, limit: 5 }),
     latestBody(pool(), v.patient_id),
     many<{ name: string; generic_name: string; unit: string }>(pool(), `SELECT name, generic_name, unit FROM medicines WHERE active ORDER BY name`),
+    can(user.role, "imaging.view") ? ordersForVisit(pool(), visitId) : Promise.resolve([]),
   ]);
+  const canOrder = can(user.role, "imaging.order") && user.doctor_id === v.doctor_id && v.status !== "cancelled";
 
   const latest = vitals[0];
   const weight = latest?.weight_kg ?? body.weight_kg;
@@ -124,6 +128,15 @@ export default async function WorkspacePage({
             <Card title="Record vitals">
               <div className="p-4">
                 <VitalsForm visitId={visitId} />
+              </div>
+            </Card>
+          )}
+
+          {(canOrder || imaging.length > 0) && (
+            <Card title="Imaging">
+              <div className="space-y-4 p-4">
+                <OrdersList visitId={visitId} orders={imaging} canCancel={canOrder} />
+                {canOrder && <OrderForm visitId={visitId} studies={STUDY_CATALOGUE} />}
               </div>
             </Card>
           )}

@@ -85,7 +85,7 @@ async function llmSummary(metrics: unknown, fetchImpl?: typeof fetch): Promise<{
   try {
     res = await doFetch(`${e.AI_BASE_URL.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${e.AI_API_KEY}`, "x-title": "DemoCare Hospital Automation" },
+      headers: { "content-type": "application/json", authorization: `Bearer ${e.AI_API_KEY}`, "x-title": "Clevo" },
       body: JSON.stringify({
         model: e.AI_MODEL,
         temperature: 0,

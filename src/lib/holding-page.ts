@@ -13,7 +13,7 @@ export const HOLDING_PAGE = /* html */ `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>DemoCare Hospital</title>
+<title>Clevo</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -47,10 +47,10 @@ export const HOLDING_PAGE = /* html */ `<!doctype html>
 </head>
 <body>
 <main>
-  <div class="brand"><div class="mark">D</div><b>DemoCare Hospital</b></div>
+  <div class="brand"><div class="mark">C</div><b>Clevo</b></div>
   <h1>This preview has no database attached</h1>
   <p>
-    DemoCare Hospital handles patient communication: enquiries, appointment booking,
+    Clevo handles patient communication: enquiries, appointment booking,
     WhatsApp confirmations and reminders, no-show recovery and discharge follow-up.
   </p>
   <p>

@@ -31,6 +31,7 @@ const NAV: { heading?: string; items: Item[] }[] = [
     heading: "Care",
     items: [
       { href: "/consult", label: "Consultation", capability: "records.view", icon: "stethoscope" },
+      { href: "/radiology", label: "Radiology", capability: "imaging.view", icon: "scan" },
       { href: "/pharmacy", label: "Pharmacy", capability: "pharmacy.dispense", icon: "pill" },
       { href: "/billing", label: "Billing", capability: "billing.view", icon: "receipt" },
     ],
@@ -87,7 +88,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             </svg>
           </div>
           <div className="min-w-0">
-            <div className="text-[15px] leading-tight font-semibold tracking-tight">DemoCare Hospital</div>
+            <div className="text-[15px] leading-tight font-semibold tracking-tight">Clevo</div>
             <div className="truncate text-xs leading-tight text-muted">{e.HOSPITAL_NAME}</div>
           </div>
         </div>

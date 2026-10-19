@@ -97,7 +97,7 @@ export class OpenAiCompatibleLeadClassifier implements LeadClassifier {
           "content-type": "application/json",
           authorization: `Bearer ${this.config.apiKey}`,
           // Optional OpenRouter attribution header; ignored by other providers.
-          "x-title": "DemoCare Hospital Automation",
+          "x-title": "Clevo",
         },
         body: JSON.stringify({
           model: this.config.model,
