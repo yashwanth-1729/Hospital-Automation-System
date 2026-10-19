@@ -47,11 +47,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           }}
         />
         <div className="relative flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
-            <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
-              <path d="M10 4v12M4 10h12" />
-            </svg>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/clevo-logo.png" alt="" width={40} height={40} className="h-10 w-10 rounded-xl ring-1 ring-white/25" />
           <span className="text-lg font-semibold tracking-tight">Clevo</span>
         </div>
 
