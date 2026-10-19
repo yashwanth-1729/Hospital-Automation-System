@@ -23,6 +23,8 @@ const EnvSchema = z.object({
   // Comma-separated mobile numbers. When set, real WhatsApp is sent to these numbers only: a
   // safety net for test numbers and demos, where Meta would reject everyone else anyway.
   WA_ALLOWED_RECIPIENTS: optionalString,
+  /** Demo servers only: one-click sign-in buttons for the *@democare.test role accounts. Never administrators. */
+  DEMO_QUICK_LOGIN: z.string().optional(),
   WA_API_VERSION: z.string().default("v23.0"),
   WA_TEMPLATE_LANGUAGE: z.string().default("en"),
 

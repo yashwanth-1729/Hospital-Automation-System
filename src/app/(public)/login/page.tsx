@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { safeNext } from "@/lib/session-cookie";
 import { currentStaff } from "@/server/auth/guard";
 import { LoginForm } from "./form";
+import { quickLogin } from "./actions";
 
 export const metadata = { title: "Sign in" };
 
@@ -98,7 +99,22 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 </pre>
               </div>
             ) : (
-              <LoginForm next={target} />
+              <>
+                <LoginForm next={target} />
+                {e.DEMO_QUICK_LOGIN === "1" && (
+                  <form action={quickLogin} className="mt-6 border-t border-border pt-5">
+                    <input type="hidden" name="next" value={target} />
+                    <p className="mb-2 text-xs text-muted">Demo: sign in without a password as</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[["reception", "Reception"], ["doctor", "Doctor"], ["nurse", "Nurse"], ["pharmacy", "Pharmacy"], ["billing", "Billing"], ["radiology", "Radiology"]].map(([k, label]) => (
+                        <button key={k} name="email" value={`${k}@democare.test`} className="rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </form>
+                )}
+              </>
             )}
           </div>
           <p className="mt-10 text-xs text-muted">Authorised staff only. Activity is recorded.</p>
