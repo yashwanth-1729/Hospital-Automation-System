@@ -1,11 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { audit } from "@/lib/audit";
+import { one } from "@/lib/db";
+import { requestContext, setSessionCookie } from "@/server/auth/guard";
 import { pool } from "@/lib/db";
 import { isRole } from "@/lib/rbac";
 import { requireStaff } from "@/server/auth/guard";
 import { generatePassword } from "@/server/auth/password";
-import { AuthError, createStaffUser, resetPassword, setUserActive, setUserRole } from "@/server/auth/users";
+import { AuthError, createSession, createStaffUser, resetPassword, setUserActive, setUserRole } from "@/server/auth/users";
 
 export type UserActionState =
   | { status: "idle" }
@@ -22,6 +26,18 @@ async function guarded<T>(fn: () => Promise<T>): Promise<T | { status: "error"; 
     if (err instanceof AuthError) return { status: "error", message: err.message };
     throw err;
   }
+}
+
+/** Administrator opens an account as that person. Recorded against the administrator; replaces their own session. */
+export async function signInAsAction(form: FormData): Promise<void> {
+  const me = await requireStaff("users.manage");
+  const userId = String(form.get("user_id") ?? "");
+  const target = await one<{ user_id: string }>(pool(), `SELECT user_id FROM staff_users WHERE user_id = $1 AND active AND user_id <> $2`, [userId, me.user_id]);
+  if (!target) redirect("/admin/users");
+  const s = await createSession(pool(), target.user_id, await requestContext());
+  await audit(pool(), { workflow: "access", actor: "staff", action: "admin_signed_in_as", recordId: target.user_id, details: { by: me.user_id }, actorId: me.user_id });
+  await setSessionCookie(s.token, s.expiresAt);
+  redirect("/");
 }
 
 export async function createUserAction(_prev: UserActionState, form: FormData): Promise<UserActionState> {

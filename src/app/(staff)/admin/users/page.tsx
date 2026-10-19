@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/time";
 import { requireStaff } from "@/server/auth/guard";
 import { listStaff } from "@/server/auth/users";
 import { CreateUserForm, UserRowActions } from "./forms";
+import { signInAsAction } from "./actions";
 
 export const metadata = { title: "Staff accounts" };
 
@@ -27,7 +28,7 @@ export default async function UsersPage() {
     <>
       <PageHeader
         title="Staff accounts"
-        description="Everyone signs in as themselves. What they can see and do follows their role, and what they do is recorded under their name."
+        description="Click a name to open Clevo as that person. Everyone signs in as themselves. What they can see and do follows their role, and what they do is recorded under their name."
       />
       <div className="grid gap-6">
         <Card title="Add a person">
@@ -49,7 +50,14 @@ export default async function UsersPage() {
                 {staff.map((u) => (
                   <tr key={u.user_id} className="hover:bg-surface-2">
                     <Td>
-                      <div className="font-medium">{u.full_name}</div>
+                      {u.active && u.user_id !== me.user_id ? (
+                        <form action={signInAsAction}>
+                          <input type="hidden" name="user_id" value={u.user_id} />
+                          <button title="Open Clevo as this person" className="text-left font-medium text-primary hover:underline">{u.full_name}</button>
+                        </form>
+                      ) : (
+                        <div className="font-medium">{u.full_name}</div>
+                      )}
                       <div className="text-xs text-muted">{u.email}</div>
                     </Td>
                     <Td>
