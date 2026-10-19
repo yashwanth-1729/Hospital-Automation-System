@@ -193,7 +193,7 @@ export async function listAppointments(): Promise<AppointmentRow[]> {
      JOIN patients p USING (patient_id)
      JOIN doctors d ON d.doctor_id = a.doctor_id
      JOIN departments dep ON dep.department_id = a.department_id
-     ORDER BY a.slot_start
+     ORDER BY a.created_at DESC, a.slot_start DESC
      LIMIT 200`,
   );
 }
