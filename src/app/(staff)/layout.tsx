@@ -83,7 +83,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
       <aside className="border-b border-border/80 bg-surface/90 backdrop-blur md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:border-r md:border-b-0">
         <div className="flex items-center gap-3 px-5 pt-5 pb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/clevo-logo.png" alt="" width={36} height={36} className="h-9 w-9 rounded-xl shadow-[var(--shadow-md)]" />
+          <img src="/clevo-logo.png" alt="" width={36} height={36} className="brand-logo h-9 w-9" />
           <div className="min-w-0">
             <div className="text-[15px] leading-tight font-semibold tracking-tight">Clevo</div>
             <div className="truncate text-xs leading-tight text-muted">{e.HOSPITAL_NAME}</div>

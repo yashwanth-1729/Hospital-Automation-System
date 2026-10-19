@@ -2,7 +2,7 @@
 
 /*
  * Design tokens.
- * One accent (a deep clinical teal) on a green-tinted neutral family, so the greys feel related
+ * One accent (the Clevo emerald) on a green-tinted neutral family, so the greys feel related
  * to the brand rather than imported. Shadows carry the hue of the surface they sit on.
  */
 :root {
@@ -12,9 +12,9 @@
   --border: #dde4e2;
   --text: #13201d;
   --muted: #58696a;
-  --primary: #0f766e;
-  --primary-strong: #0b5f58;
-  --primary-soft: #e1f1ee;
+  --primary: #047857;
+  --primary-strong: #065f46;
+  --primary-soft: #dcf5e8;
   --ok: #17803d;
   --ok-soft: #e6f5ea;
   --warn: #a8570b;
@@ -43,9 +43,9 @@
     --border: #243330;
     --text: #e4ece9;
     --muted: #8da29c;
-    --primary: #3dd5c0;
-    --primary-strong: #6fe3d3;
-    --primary-soft: #0f2b27;
+    --primary: #34d399;
+    --primary-strong: #6ee7b7;
+    --primary-soft: #0e2a1f;
     --ok: #55d98a;
     --ok-soft: #0f2618;
     --warn: #f0b944;
@@ -373,4 +373,15 @@ a.bg-primary:hover {
   a[href]::after {
     content: "";
   }
+}
+
+/* Brand micro-animations. All of them stand down for people who prefer reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .logo-pop { animation: pop 600ms var(--ease-out) both; }
+  .brand-logo { transition: transform 400ms var(--ease-out); }
+  .brand-logo:hover { transform: rotate(-8deg) scale(1.08); }
+  button:not(:disabled):active, a.btn:active { transform: translateY(1px) scale(0.985); }
+  button, a { transition: transform 150ms var(--ease-out), background-color 150ms, border-color 150ms, color 150ms, box-shadow 200ms; }
+  .card-lift { transition: transform 250ms var(--ease-out), box-shadow 250ms; }
+  .card-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 }

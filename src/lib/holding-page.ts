@@ -28,7 +28,7 @@ export const HOLDING_PAGE = /* html */ `<!doctype html>
   }
   .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
   .mark {
-    width: 38px; height: 38px; border-radius: 10px; background: #0f766e; color: #fff;
+    width: 38px; height: 38px; border-radius: 10px; background: #047857; color: #fff;
     display: grid; place-items: center; font-weight: 700;
   }
   .brand b { font-size: 15px; }

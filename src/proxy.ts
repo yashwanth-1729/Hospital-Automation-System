@@ -15,7 +15,7 @@ import { SESSION_COOKIE } from "@/lib/session-cookie";
  * signature) and the health check are public.
  */
 
-const PUBLIC_PATHS = ["/login", "/no-access", "/enquiry", "/r/", "/api/webhooks/", "/api/health", "/clevo-logo.png", "/icon.png"];
+const PUBLIC_PATHS = ["/login", "/no-access", "/enquiry", "/r/", "/api/webhooks/", "/api/health", "/clevo-logo.png", "/icon.png", "/clevo-brand.webp"];
 
 function isPublic(path: string): boolean {
   return PUBLIC_PATHS.some((p) => (p.endsWith("/") ? path.startsWith(p) : path === p || path.startsWith(`${p}/`)));
