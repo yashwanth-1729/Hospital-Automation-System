@@ -5,6 +5,7 @@ import { pool } from "@/lib/db";
 import { safeNext } from "@/lib/session-cookie";
 import { requestContext, setSessionCookie } from "@/server/auth/guard";
 import { createSession, signIn } from "@/server/auth/users";
+import { audit } from "@/lib/audit";
 import { env } from "@/lib/env";
 import { one } from "@/lib/db";
 
@@ -27,6 +28,7 @@ export async function quickLogin(form: FormData): Promise<void> {
   );
   if (!row) redirect("/login");
   const s = await createSession(pool(), row.user_id, await requestContext());
+  await audit(pool(), { workflow: "access", actor: "staff", action: "quick_login", recordId: row.user_id, details: { demo: true }, actorId: row.user_id });
   await setSessionCookie(s.token, s.expiresAt);
   redirect(safeNext(form.get("next")));
 }
