@@ -6,12 +6,12 @@
  * to the brand rather than imported. Shadows carry the hue of the surface they sit on.
  */
 :root {
-  --bg: #f3f6f5;
+  --bg: #e9f5ee;
   --surface: #ffffff;
-  --surface-2: #edf1f0;
-  --border: #dde4e2;
-  --text: #13201d;
-  --muted: #58696a;
+  --surface-2: #e2f0e8;
+  --border: #c8e0d1;
+  --text: #0e2218;
+  --muted: #4a675a;
   --primary: #047857;
   --primary-strong: #065f46;
   --primary-soft: #dcf5e8;
@@ -37,10 +37,10 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b1210;
-    --surface: #111a17;
-    --surface-2: #17221f;
-    --border: #243330;
+    --bg: #08140e;
+    --surface: #0e1c15;
+    --surface-2: #14281d;
+    --border: #214030;
     --text: #e4ece9;
     --muted: #8da29c;
     --primary: #34d399;
@@ -88,6 +88,7 @@
   --color-wa-bubble: var(--wa-bubble);
   --color-wa-header: var(--wa-header);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
   --shadow-card: var(--shadow-sm);
 }
@@ -108,8 +109,8 @@ body {
   background-color: var(--bg);
   /* A soft wash of the brand colour from the top corner, so large flat areas are not dead. */
   background-image:
-    radial-gradient(900px 420px at 92% -8%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 70%),
-    radial-gradient(700px 380px at -6% 105%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 70%);
+    radial-gradient(900px 420px at 92% -8%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 70%),
+    radial-gradient(700px 380px at -6% 105%, color-mix(in oklab, var(--primary) 11%, transparent), transparent 70%);
   background-attachment: fixed;
 }
 
@@ -135,6 +136,12 @@ h1,
 h2,
 h3 {
   text-wrap: balance;
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  color: var(--primary-strong);
 }
 
 p {
