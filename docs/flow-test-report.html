@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow test report: DemoCare Hospital</title>
+<style>
+  :root { --teal:#0f766e; --soft:#e1f1ee; --bg:#f4f7f6; --text:#14201d; --muted:#586a66; --amber:#a8570b; --amber-soft:#fbf1df; --red:#b4231f; }
+  * { box-sizing: border-box; }
+  html { overflow-wrap: anywhere; }
+  body { margin:0; font:18px/1.6 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 18px 80px; }
+  h1 { font-size: 32px; line-height:1.2; margin: 0 0 8px; letter-spacing:-0.02em; }
+  h2 { font-size: 24px; margin: 44px 0 14px; color: var(--teal); }
+  h3 { font-size: 20px; margin: 0 0 6px; }
+  h4 { font-size: 15px; margin: 18px 0 6px; color: var(--muted); text-transform: none; }
+  p { margin: 6px 0; }
+  .lead { color: var(--muted); font-size: 19px; margin-bottom: 22px; }
+  .score { display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin: 22px 0; }
+  .score div { background:#fff; border-radius:14px; padding:16px; box-shadow:0 1px 3px rgba(15,61,54,.12); }
+  .score b { display:block; font-size:34px; color:var(--teal); line-height:1.1; }
+  .score span { color:var(--muted); font-size:15px; }
+  .how { background:#fff; border-left:5px solid var(--teal); border-radius:10px; padding:14px 18px; margin: 18px 0 8px; }
+  .how li { margin: 4px 0; }
+  .card { display:flex; gap:14px; background:#fff; border-radius:16px; padding:18px; margin: 14px 0; box-shadow:0 1px 3px rgba(15,61,54,.12); border-left:6px solid var(--teal); }
+  .card.guard { border-left-color: var(--amber); }
+  .card.bad { border-left-color: var(--red); }
+  .num { flex:none; width:34px; height:34px; border-radius:50%; background:var(--soft); color:var(--teal); font-weight:700; display:grid; place-items:center; font-size:16px; }
+  .body { min-width:0; flex:1; }
+  .who, .click { color:var(--muted); font-size:16px; }
+  .badge { display:inline-block; padding:4px 12px; border-radius:999px; font-size:15px; font-weight:600; }
+  .badge.good { background:#dff3e6; color:#17803d; }
+  .badge.guard { background:var(--amber-soft); color:var(--amber); }
+  .badge.bad { background:#fbeaea; color:var(--red); }
+  table.facts { width:100%; border-collapse:collapse; margin:10px 0 4px; font-size:16px; }
+  table.facts td { padding:6px 8px; border-top:1px solid #e3ebe9; vertical-align:top; }
+  table.facts td:first-child { color:var(--muted); width:38%; }
+  ul { margin: 6px 0 6px 20px; padding:0; }
+  li { margin: 4px 0; }
+  ul.under li { margin: 8px 0; }
+  details { margin-top:12px; background:var(--soft); border-radius:10px; padding:10px 14px; }
+  summary { cursor:pointer; font-weight:600; color:var(--teal); }
+  small, .small { color: var(--muted); font-size: 15px; }
+  footer { margin-top:40px; color:var(--muted); font-size:15px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Every flow, tested on the live system</h1>
+  <p class="lead">This page shows what happened when every part of the hospital system was run for real, one step at a time, on the live server, and what the system does underneath at each step.</p>
+
+  <div class="score">
+    <div><b>23</b><span>checks run</span></div>
+    <div><b>18</b><span>worked as expected</span></div>
+    <div><b>5</b><span>correctly blocked (safety rules)</span></div>
+    <div><b>0</b><span>failed</span></div>
+    <div><b>5</b><span>real WhatsApp messages sent</span></div>
+  </div>
+
+  <div class="how">
+    <b>How to read this page</b>
+    <ul>
+      <li>Each flow is a part of the hospital: front desk, doctor, pharmacy, billing and so on.</li>
+      <li>Each card is one step. It says <b>who</b> does it, <b>what they click</b>, what <b>happened</b>, and what the system does <b>underneath</b>.</li>
+      <li>An amber card means the system <b>refused</b> something on purpose, for example prescribing a medicine the patient is allergic to. Those are the safety rules doing their job.</li>
+      <li>Press "Show the proof" on a card to see the records the live system really wrote.</li>
+    </ul>
+  </div>
+
+  <section><h2>1. Patient enquiry</h2>
+<article class="card good">
+  <div class="num">1</div>
+  <div class="body">
+    <h3>The enquiry arrived, was understood, booked, and confirmed on WhatsApp</h3>
+    <p class="who"><b>Who:</b> Patient (website form or an ad lead)</p>
+    <p class="click"><b>What you click:</b> Patient opens /enquiry, fills the form, presses Request appointment.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Lead status</td><td>booked</td></tr><tr><td>Department</td><td>cardiology</td></tr><tr><td>Appointment created</td><td>yes</td></tr><tr><td>Steps recorded</td><td>4</td></tr><tr><td>Whatsapp</td><td>Appointment confirmation: sent</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The form (or an external source) sends the enquiry to the server, which checks it, removes duplicates and stores it in about a second.</li><li>A background worker picks it up. An AI reads the text to find the department and whether it is urgent. A fixed safety check for emergencies and medical questions always runs as well, and can only make things more cautious.</li><li>For a routine enquiry the system locks the earliest free slot for the right doctor (two people can never get the same slot), creates the appointment and queues the reminders for 24 hours and 3 hours before.</li><li>It sends the approved WhatsApp confirmation, once only. Every step is written to the audit log.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The enquiry was stored</li><li>The AI and the safety check worked out the department and urgency</li><li>A free slot was locked and the appointment created</li><li>A WhatsApp message was sent</li></ul><h4>WhatsApp messages</h4><ul><li>Appointment confirmation: <b>sent to WhatsApp</b></li></ul></details>
+  </div>
+</article></section><section><h2>2. Front desk</h2>
+<article class="card good">
+  <div class="num">2</div>
+  <div class="body">
+    <h3>Register the patient and give them a token</h3>
+    <p class="who"><b>Who:</b> Receptionist</p>
+    <p class="click"><b>What you click:</b> Reception &gt; Register patient: name, mobile, allergies = Penicillin, WhatsApp updates = Yes, doctor = Dr. Ananya Rao.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Patient</td><td>Yashwanth Cherukuru</td></tr><tr><td>Uhid</td><td>UH-001209</td></tr><tr><td>Matched existing patient</td><td>yes</td></tr><tr><td>Allergy on file</td><td>Penicillin</td></tr><tr><td>Token number</td><td>1</td></tr><tr><td>Status</td><td>waiting</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The mobile number is looked up first. The patient already exists from the enquiry, so no duplicate is made; only blank details (here the allergy) are filled in.</li><li>The system gives the next token number for that doctor today. The number comes from a database counter that cannot hand out the same number twice, even if two desks click at the same moment.</li><li>A visit is created in &#x27;waiting&#x27; status and appears in the doctor&#x27;s queue, with the allergy shown in red.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The patient already existed, so no duplicate was made</li><li>A visit was created and the next token number given</li></ul></details>
+  </div>
+</article></section><section><h2>3. Nurse</h2>
+<article class="card guard">
+  <div class="num">3</div>
+  <div class="body">
+    <h3>A reading that cannot be right is rejected</h3>
+    <p class="who"><b>Who:</b> Nurse</p>
+    <p class="click"><b>What you click:</b> Consultation &gt; the patient &gt; Vitals: pulse 900, then Record vitals.</p>
+    <p><span class="badge guard">Blocked on purpose (this is the safety working)</span></p>
+    <table class="facts"><tr><td>The system said</td><td>Refused: Pulse should be at most 250.</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Every measurement is checked against a believable range before it is saved. A pulse of 900 is refused with the reason, so a typing slip never reaches a doctor.</li></ul>
+    <p class="small">Nothing was changed in the system, because the request was refused. That is the proof.</p>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">4</div>
+  <div class="body">
+    <h3>Record real vitals</h3>
+    <p class="who"><b>Who:</b> Nurse</p>
+    <p class="click"><b>What you click:</b> Same screen: BP 138/88, pulse 78, temperature 36.9, weight 71 kg, height 174 cm.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Saved</td><td>yes</td></tr><tr><td>Bmi</td><td>23.5</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The readings are saved against this visit with the nurse&#x27;s name and the time.</li><li>BMI is worked out from weight and height and shown to the doctor.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>Vitals saved with the nurse&#x27;s name and the time</li></ul></details>
+  </div>
+</article></section><section><h2>4. Doctor</h2>
+<article class="card good">
+  <div class="num">5</div>
+  <div class="body">
+    <h3>Call the patient in</h3>
+    <p class="who"><b>Who:</b> Doctor (Dr. Ananya Rao)</p>
+    <p class="click"><b>What you click:</b> Consultation &gt; My patients &gt; Call in.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Status</td><td>in_consultation</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The visit moves from &#x27;waiting&#x27; to &#x27;in consultation&#x27;. A doctor can only have one patient with them at a time, and can only open their own patients.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The doctor called the patient in</li></ul></details>
+  </div>
+</article>
+<article class="card guard">
+  <div class="num">6</div>
+  <div class="body">
+    <h3>Prescribing amoxicillin to a penicillin-allergic patient is stopped</h3>
+    <p class="who"><b>Who:</b> Doctor</p>
+    <p class="click"><b>What you click:</b> Prescription: Amoxicillin 500 mg. The row turns red; press Finish consultation without giving a reason.</p>
+    <p><span class="badge guard">Blocked on purpose (this is the safety working)</span></p>
+    <table class="facts"><tr><td>The system said</td><td>Refused. State why this is safe, or remove the medicine. Allergy found: Amoxicillin 500 mg (penicillin)</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The patient&#x27;s allergy is checked against every medicine by drug family, not just the name: amoxicillin is a penicillin, so it is caught even though the word &#x27;penicillin&#x27; is not on the prescription.</li><li>Finishing is refused until the doctor writes why it is safe. If they do, that reason is stored on the prescription and shown to the pharmacist.</li></ul>
+    <p class="small">Nothing was changed in the system, because the request was refused. That is the proof.</p>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">7</div>
+  <div class="body">
+    <h3>Finish the consultation with a safe medicine and a follow-up date</h3>
+    <p class="who"><b>Who:</b> Doctor</p>
+    <p class="click"><b>What you click:</b> Change to Azithromycin 500 mg, follow-up in 7 days, press Finish consultation.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Consultation</td><td>final</td></tr><tr><td>Prescription</td><td>issued</td></tr><tr><td>Medicine</td><td>Azithromycin 500 mg</td></tr><tr><td>Quantity</td><td>3</td></tr><tr><td>Follow up</td><td>2026-10-26</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The record is locked: from now on it can only receive dated addenda, never edits.</li><li>A prescription is issued to the pharmacy queue. The quantity (3 tablets) was worked out from dose x times a day x days.</li><li>A WhatsApp &#x27;consultation complete&#x27; message is queued, and a reminder is scheduled for the day before the follow-up. The background worker sends them.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The visit was marked completed</li><li>The consultation was locked (it can no longer be edited)</li><li>A WhatsApp message was sent</li></ul><h4>Queued for the background worker</h4><ul><li>Send a WhatsApp message <small>(done)</small></li><li>Remind the patient the day before the follow-up <small>(waiting for its time: 25 Oct, 10:00 AM IST)</small></li></ul><h4>WhatsApp messages</h4><ul><li>Consultation complete, prescription ready: <b>sent to WhatsApp</b></li></ul></details>
+  </div>
+</article></section><section><h2>5. Pharmacy</h2>
+<article class="card guard">
+  <div class="num">8</div>
+  <div class="body">
+    <h3>A nurse cannot dispense medicines</h3>
+    <p class="who"><b>Who:</b> Nurse</p>
+    <p class="click"><b>What you click:</b> Nurses do not see Pharmacy in their menu; even a direct request is refused.</p>
+    <p><span class="badge guard">Blocked on purpose (this is the safety working)</span></p>
+    <table class="facts"><tr><td>The system said</td><td>Only the pharmacy can dispense medicines.</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Every action asks &#x27;is this role allowed to do this?&#x27; on the server, against the database, not just in the menu. Hiding a button is not security; this check is.</li></ul>
+    <p class="small">Nothing was changed in the system, because the request was refused. That is the proof.</p>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">9</div>
+  <div class="body">
+    <h3>The pharmacist dispenses from stock</h3>
+    <p class="who"><b>Who:</b> Pharmacist</p>
+    <p class="click"><b>What you click:</b> Pharmacy &gt; the prescription &gt; Dispense.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Status</td><td>dispensed</td></tr><tr><td>Amount charged</td><td>122.25</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Stock is taken from the batch that expires first, never from an expired batch, and each unit is priced from the batch it came from.</li><li>Every unit that leaves is written to a movement ledger, and the batch&#x27;s count always equals the sum of its ledger. Two counters cannot take the last units at the same time.</li><li>The prescription moves to &#x27;dispensed&#x27; and the medicine becomes billable.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>Medicines handed over and the stock reduced</li></ul></details>
+  </div>
+</article></section><section><h2>6. Billing</h2>
+<article class="card good">
+  <div class="num">10</div>
+  <div class="body">
+    <h3>Build the invoice from what actually happened</h3>
+    <p class="who"><b>Who:</b> Billing</p>
+    <p class="click"><b>What you click:</b> Billing &gt; Ready to bill &gt; Create invoice. Then add the service &#x27;ECG&#x27;.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Lines</td><td>Consultation: Dr. Ananya Rao (Cardiology): ₹900 | Azithromycin 500 mg: ₹122.25 | ECG: ₹300</td></tr><tr><td>Total</td><td>1322.25</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The invoice is pre-filled from the consultation fee and every medicine the pharmacy dispensed. Each of those items can sit on only one live invoice, so nothing can be billed twice.</li><li>Totals are always recalculated from the lines inside the database; nothing trusts a number typed in a browser.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>An invoice was drafted</li></ul></details>
+  </div>
+</article>
+<article class="card guard">
+  <div class="num">11</div>
+  <div class="body">
+    <h3>A 20% discount needs an administrator</h3>
+    <p class="who"><b>Who:</b> Billing</p>
+    <p class="click"><b>What you click:</b> Discount: 20%, reason &#x27;Hardship&#x27;, Apply.</p>
+    <p><span class="badge guard">Blocked on purpose (this is the safety working)</span></p>
+    <table class="facts"><tr><td>The system said</td><td>Discounts above 10% need an administrator.</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Billing staff may give up to 10% with a reason. Anything bigger is refused unless an administrator does it, so one person cannot quietly waive a large bill.</li></ul>
+    <p class="small">Nothing was changed in the system, because the request was refused. That is the proof.</p>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">12</div>
+  <div class="body">
+    <h3>A 5% discount, then issue the invoice</h3>
+    <p class="who"><b>Who:</b> Billing</p>
+    <p class="click"><b>What you click:</b> Discount 5% (reason: Senior citizen), Apply, then Issue invoice.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Invoice number</td><td>INV-2026-000253</td></tr><tr><td>Discount</td><td>66.11</td></tr><tr><td>Total to pay</td><td>1256.14</td></tr><tr><td>Status</td><td>issued</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The discount is saved with its reason. Issuing gives the invoice its number (a draft leaves no gap in the numbering) and freezes the lines.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>A discount was recorded together with its reason</li><li>The invoice was numbered and locked</li></ul></details>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">13</div>
+  <div class="body">
+    <h3>Take a part payment; pressing the button twice records it once</h3>
+    <p class="who"><b>Who:</b> Billing or Receptionist</p>
+    <p class="click"><b>What you click:</b> Record payment: ₹500 by UPI. (The same form submitted twice.)</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Receipt</td><td>RCT-2026-000240</td></tr><tr><td>Second press was recognised as duplicate</td><td>yes</td></tr><tr><td>Still owed</td><td>756.14</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Each payment form carries a one-time key. If the same form arrives twice (a double click, a slow network), the second is recognised and returns the first payment instead of charging again.</li><li>A numbered receipt is created, the invoice becomes &#x27;partly paid&#x27;, and a WhatsApp receipt is queued.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>A payment was recorded with a numbered receipt</li><li>A WhatsApp message was sent</li></ul><h4>Queued for the background worker</h4><ul><li>Send a WhatsApp message <small>(done)</small></li><li>Remind the patient about an unpaid balance <small>(waiting for its time: 26 Oct, 10:00 AM IST)</small></li></ul><h4>WhatsApp messages</h4><ul><li>Payment receipt: <b>sent to WhatsApp</b></li></ul></details>
+  </div>
+</article>
+<article class="card guard">
+  <div class="num">14</div>
+  <div class="body">
+    <h3>Taking more than is owed is refused</h3>
+    <p class="who"><b>Who:</b> Billing</p>
+    <p class="click"><b>What you click:</b> Record payment: ₹99,999.</p>
+    <p><span class="badge guard">Blocked on purpose (this is the safety working)</span></p>
+    <table class="facts"><tr><td>The system said</td><td>The balance is ₹756.14; that is more than is owed.</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>While the payment is recorded the invoice row is locked, so two counters cannot together take more than the balance.</li></ul>
+    <p class="small">Nothing was changed in the system, because the request was refused. That is the proof.</p>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">15</div>
+  <div class="body">
+    <h3>Take the rest in cash</h3>
+    <p class="who"><b>Who:</b> Billing</p>
+    <p class="click"><b>What you click:</b> Record payment: the remaining balance, cash.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Receipt</td><td>RCT-2026-000241</td></tr><tr><td>Status</td><td>paid</td></tr><tr><td>Paid in total</td><td>1256.14</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The invoice becomes &#x27;paid&#x27;. A second WhatsApp receipt says the bill is paid in full.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>A payment was recorded with a numbered receipt</li><li>A WhatsApp message was sent</li></ul><h4>Queued for the background worker</h4><ul><li>Send a WhatsApp message <small>(done)</small></li></ul><h4>WhatsApp messages</h4><ul><li>Payment receipt: <b>sent to WhatsApp</b></li></ul></details>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">16</div>
+  <div class="body">
+    <h3>Refund part of it, with a reason</h3>
+    <p class="who"><b>Who:</b> Billing</p>
+    <p class="click"><b>What you click:</b> Refund: ₹100 cash, reason &#x27;Medicine not needed&#x27;.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Status</td><td>partially_paid</td></tr><tr><td>Now owed</td><td>100</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>A refund is its own numbered record, never an edit of the payment. The invoice reopens by that amount and the day book shows the net.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>A refund was recorded with its reason</li></ul></details>
+  </div>
+</article></section><section><h2>7. Wards</h2>
+<article class="card good">
+  <div class="num">17</div>
+  <div class="body">
+    <h3>Admit the patient to a General Ward bed</h3>
+    <p class="who"><b>Who:</b> Receptionist or Nurse</p>
+    <p class="click"><b>What you click:</b> Wards &gt; Admit a patient &gt; search the patient &gt; bed &gt; doctor &gt; Admit.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Bed</td><td>BED-G04</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The bed is locked while it is assigned: two people cannot take the same bed, and one patient cannot be in two beds. The bed turns &#x27;occupied&#x27;. The ward&#x27;s day rate in force today is recorded on the stay.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The patient was admitted and the bed marked occupied</li></ul></details>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">18</div>
+  <div class="body">
+    <h3>Move the patient to an Intensive Care bed</h3>
+    <p class="who"><b>Who:</b> Nurse</p>
+    <p class="click"><b>What you click:</b> Open the admission &gt; Move to another bed &gt; an ICU bed &gt; Move patient.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Moved to</td><td>BED-I02</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The first stay is closed and a second opened at the ICU&#x27;s higher rate. The vacated bed goes to &#x27;cleaning&#x27;, not straight back to &#x27;available&#x27;. Both beds are locked in a fixed order so two simultaneous moves cannot deadlock.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The patient was moved; the old bed was sent for cleaning</li></ul></details>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">19</div>
+  <div class="body">
+    <h3>Discharge with an approved follow-up date</h3>
+    <p class="who"><b>Who:</b> Doctor, Nurse or Receptionist</p>
+    <p class="click"><b>What you click:</b> Open the admission &gt; Discharge: follow-up in 10 days, approved by Dr. Ananya Rao &gt; Discharge patient.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Discharge record</td><td>DIS-GCEDEHZ9PJ</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The stay is closed, the bed goes to &#x27;cleaning&#x27;, and the admission is marked discharged.</li><li>The existing discharge-follow-up automation takes over: it schedules a reminder for the day before the follow-up and a feedback request two days later, and sends the follow-up message now. The follow-up date must name the doctor who approved it.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The patient was discharged and the bed sent for cleaning</li><li>The discharge was handed to the follow-up automation</li><li>The follow-up reminder was scheduled</li><li>A WhatsApp message was sent</li></ul><h4>Queued for the background worker</h4><ul><li>Schedule the follow-up reminder and the feedback request <small>(done)</small></li><li>Remind the patient about the follow-up visit <small>(waiting for its time: 28 Oct, 10:00 AM IST)</small></li><li>Ask the patient for feedback <small>(waiting for its time: 21 Oct, 05:48 AM IST)</small></li></ul><h4>WhatsApp messages</h4><ul><li>Discharge follow-up: <b>sent to WhatsApp</b></li></ul></details>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">20</div>
+  <div class="body">
+    <h3>A nurse prepares the bed, and billing charges the stay</h3>
+    <p class="who"><b>Who:</b> Nurse, then Billing</p>
+    <p class="click"><b>What you click:</b> Wards &gt; Mark ready on the cleaning bed. Then the admission &gt; Create invoice for the stay.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Bed released</td><td>BED-G04</td></tr><tr><td>Charges</td><td>Bed I-02, Intensive Care: 1 day x ₹7500 = ₹7500</td></tr><tr><td>Total</td><td>7500</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Only a bed that is being cleaned can be marked ready. Bed charges are worked out per calendar day in each bed at the rate that applied; a transfer day is charged once, to the new bed.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>An invoice was drafted</li></ul></details>
+  </div>
+</article></section><section><h2>8. Missed appointment</h2>
+<article class="card good">
+  <div class="num">21</div>
+  <div class="body">
+    <h3>A patient does not turn up: recovery starts</h3>
+    <p class="who"><b>Who:</b> Receptionist (or automatic after the grace period)</p>
+    <p class="click"><b>What you click:</b> Appointments &gt; the booked appointment &gt; No-show.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Marked</td><td>yes</td></tr><tr><td>Reason</td><td>none</td></tr><tr><td>Message scheduled for</td><td>19 Oct, 06:18 AM IST</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>The appointment is marked missed and the recovery workflow starts: a polite WhatsApp with the next free slots, a second gentle follow-up, and if there is still no answer a task for a staff member.</li><li>Normally the first message waits about half an hour; for this test the wait was set to zero.</li><li>Any later &#x27;attended&#x27; mark would cancel the pending messages, so a patient who turns up late is not chased.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>The appointment was marked as missed</li></ul><h4>Queued for the background worker</h4><ul><li>Message the patient who missed the visit <small>(waiting for its time: 19 Oct, 06:18 AM IST)</small></li></ul></details>
+  </div>
+</article></section><section><h2>9. Control</h2>
+<article class="card good">
+  <div class="num">22</div>
+  <div class="body">
+    <h3>A new administrator account is created; the password is shown once</h3>
+    <p class="who"><b>Who:</b> Administrator</p>
+    <p class="click"><b>What you click:</b> Staff accounts &gt; Add a person.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Role</td><td>nurse</td></tr><tr><td>Must change password</td><td>yes</td></tr><tr><td>Removed afterwards</td><td>yes</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>Only a one-time password is generated and shown. Only a salted hash is stored, so even the database cannot reveal it; the person must choose their own at first sign-in. Sessions are stored as hashes and die the moment an account is switched off.</li></ul>
+    <details><summary>Show the proof from the live system</summary><h4>Recorded in the activity log</h4><ul><li>A staff account was created</li></ul></details>
+  </div>
+</article>
+<article class="card good">
+  <div class="num">23</div>
+  <div class="body">
+    <h3>Whole-system health check after all of this</h3>
+    <p class="who"><b>Who:</b> The system itself</p>
+    <p class="click"><b>What you click:</b> Nothing to click: this is the final audit of the data.</p>
+    <p><span class="badge good">Worked</span></p>
+    <table class="facts"><tr><td>Patients</td><td>209</td></tr><tr><td>Visits</td><td>266</td></tr><tr><td>Invoices</td><td>254</td></tr><tr><td>Payments</td><td>242</td></tr><tr><td>Whatsapp sent</td><td>448</td></tr><tr><td>Audit records</td><td>654</td></tr><tr><td>Batches where count differs from ledger</td><td>0</td></tr><tr><td>Invoices where money does not add up</td><td>0</td></tr></table>
+    <h4>What the system does underneath</h4>
+    <ul class="under"><li>After everything above, the books are checked: every batch&#x27;s stock count must equal its ledger, and every invoice&#x27;s paid amount must equal its payments minus refunds.</li></ul>
+    
+  </div>
+</article></section>
+
+  <footer>
+    Tested on the live server at https://democare.tail349a3d.ts.net on 19 Oct, 05:49 AM IST. Real WhatsApp messages went only to the one approved test number. The patient in this test is the demo patient created for it.
+  </footer>
+</div>
+</body>
+</html>
