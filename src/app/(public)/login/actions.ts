@@ -16,14 +16,14 @@ const MESSAGES = {
   throttled: "Too many failed attempts from this connection. Please wait a few minutes and try again.",
 } as const;
 
-/** Demo servers only (DEMO_QUICK_LOGIN=1): signs in as one of the *@democare.test role accounts, never an administrator. */
+/** Demo servers only (DEMO_QUICK_LOGIN=1): signs in as one of the *@democare.test role accounts, plus the one administrator named in DEMO_QUICK_ADMIN_EMAIL. */
 export async function quickLogin(form: FormData): Promise<void> {
   if (env().DEMO_QUICK_LOGIN !== "1") redirect("/login");
   const email = String(form.get("email") ?? "").toLowerCase();
   const row = await one<{ user_id: string }>(
     pool(),
-    `SELECT user_id FROM staff_users WHERE lower(email) = $1 AND email LIKE '%@democare.test' AND role <> 'admin' AND active`,
-    [email],
+    `SELECT user_id FROM staff_users WHERE lower(email) = $1 AND ((email LIKE '%@democare.test' AND role <> 'admin') OR lower(email) = lower($2)) AND active`,
+    [email, env().DEMO_QUICK_ADMIN_EMAIL ?? ""],
   );
   if (!row) redirect("/login");
   const s = await createSession(pool(), row.user_id, await requestContext());

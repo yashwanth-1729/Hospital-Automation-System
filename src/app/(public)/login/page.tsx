@@ -58,8 +58,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                     <input type="hidden" name="next" value={target} />
                     <p className="mb-2 text-xs text-muted">Demo: sign in without a password as</p>
                     <div className="flex flex-wrap gap-2">
-                      {[["reception", "Reception"], ["doctor", "Doctor"], ["nurse", "Nurse"], ["pharmacy", "Pharmacy"], ["billing", "Billing"], ["radiology", "Radiology"]].map(([k, label]) => (
-                        <button key={k} name="email" value={`${k}@democare.test`} className="rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">
+                      {[...(e.DEMO_QUICK_ADMIN_EMAIL ? [[e.DEMO_QUICK_ADMIN_EMAIL, "Admin"]] : []), ["reception@democare.test", "Reception"], ["doctor@democare.test", "Doctor"], ["nurse@democare.test", "Nurse"], ["pharmacy@democare.test", "Pharmacy"], ["billing@democare.test", "Billing"], ["radiology@democare.test", "Radiology"]].map(([k, label]) => (
+                        <button key={k} name="email" value={k} className="rounded-full border border-border px-3 py-1.5 text-sm hover:border-primary hover:text-primary">
                           {label}
                         </button>
                       ))}

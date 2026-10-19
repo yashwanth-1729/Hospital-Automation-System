@@ -48,6 +48,16 @@ export function proxy(req: NextRequest) {
   if (!process.env.DATABASE_URL) return notConnected(req);
 
   const path = req.nextUrl.pathname;
+
+  // Demo servers only (DEMO_SIGNOUT_ON_RELOAD=1): opening or refreshing a page in the browser signs the
+  // person out. Moving around inside the app does not reload the page, so it does not trigger this.
+  const isDocumentLoad = req.method === "GET" && req.headers.get("sec-fetch-dest") === "document" && req.headers.get("sec-fetch-mode") === "navigate";
+  if (process.env.DEMO_SIGNOUT_ON_RELOAD === "1" && isDocumentLoad && req.cookies.get(SESSION_COOKIE)?.value && (!isPublic(path) || path === "/login")) {
+    const res = path === "/login" ? NextResponse.next() : NextResponse.redirect(new URL("/login", req.url));
+    res.cookies.delete(SESSION_COOKIE);
+    return res;
+  }
+
   if (isPublic(path)) return NextResponse.next();
   if (req.cookies.get(SESSION_COOKIE)?.value) return NextResponse.next();
 
