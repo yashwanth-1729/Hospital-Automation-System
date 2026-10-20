@@ -6,13 +6,16 @@ import { finaliseConsultation, getConsultationForVisit, type Actor } from "@/ser
 import { registerPatient } from "@/server/clinic/patients";
 import { createVisit, startConsultation } from "@/server/clinic/visits";
 import {
+  alternativesFor,
   closePrescription,
   dispensePrescription,
   getPrescription,
   linkItemToMedicine,
   pharmacyQueue,
+  substituteItem,
 } from "@/server/pharmacy/dispense";
 import { adjustStock, listBatches, PharmacyError, receiveStock, setReorderLevel, stockOverview } from "@/server/pharmacy/stock";
+import { sendVisitToBilling } from "@/server/billing/invoices";
 import { resetData } from "./helpers";
 
 const PASSWORD = "correct horse battery";
@@ -349,5 +352,40 @@ describe("closing a prescription", () => {
     await medicine("Reason Tablet", [{ number: "A", days: 200, qty: 100, price: 1 }]);
     const rx = await prescription([{ name: "Reason Tablet" }]);
     await expect(closePrescription(pharmacist, rx, " ")).rejects.toMatchObject({ code: "validation" });
+  });
+});
+
+describe("alternatives and sending to billing", () => {
+  it("offers another brand of the same generic that is in stock, and swaps to it", async () => {
+    const out = await medicine("Brand A 500", [{ number: "A1", days: 300, qty: 3, price: 2 }]);
+    const other = await medicine("Brand B 500", [{ number: "B1", days: 300, qty: 50, price: 3 }]);
+    const unrelated = await medicine("Different Drug", [{ number: "D1", days: 300, qty: 50, price: 3 }]);
+    await pool().query(`UPDATE medicines SET generic_name = 'Paracetamol' WHERE medicine_id = ANY($1)`, [[out, other]]);
+    const rxId = await prescription([{ name: "Brand A 500", qty: 10 }]);
+    const rx = await getPrescription(pool(), rxId);
+    const item = rx!.items[0]!;
+    const alts = await alternativesFor(pool(), out);
+    expect(alts.map((a) => a.medicine_id)).toEqual([other]);
+    expect(alts.map((a) => a.medicine_id)).not.toContain(unrelated);
+    await expect(substituteItem(pharmacist, item.item_id, unrelated)).rejects.toMatchObject({ code: "medicine_not_found" });
+    await expect(substituteItem(nurse, item.item_id, other)).rejects.toBeInstanceOf(PharmacyError);
+    await substituteItem(pharmacist, item.item_id, other);
+    const r = await dispensePrescription(pharmacist, rxId, [{ itemId: item.item_id, quantity: 10 }]);
+    expect(r.prescriptionStatus).toBe("dispensed");
+    expect(await onHand(other)).toBe(40);
+  });
+
+  it("hands the visit's bill to billing as a draft invoice, once", async () => {
+    await medicine("Billing Tab", [{ number: "X1", days: 300, qty: 50, price: 4 }]);
+    const rxId = await prescription([{ name: "Billing Tab", qty: 5 }]);
+    const rx = await getPrescription(pool(), rxId);
+    await dispensePrescription(pharmacist, rxId, [{ itemId: rx!.items[0]!.item_id, quantity: 5 }]);
+    const v = await one<{ visit_id: string }>(pool(), `SELECT visit_id FROM prescriptions WHERE prescription_id = $1`, [rxId]);
+    const a = await sendVisitToBilling(pharmacist, v!.visit_id);
+    const b = await sendVisitToBilling(pharmacist, v!.visit_id);
+    expect(b).toEqual({ invoiceId: a.invoiceId, existing: true });
+    const lines = await many<{ description: string }>(pool(), `SELECT description FROM invoice_lines WHERE invoice_id = $1`, [a.invoiceId]);
+    expect(lines.map((l) => l.description)).toContain("Billing Tab");
+    await expect(sendVisitToBilling(nurse, v!.visit_id)).rejects.toThrow();
   });
 });

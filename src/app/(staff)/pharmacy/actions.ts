@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/server/auth/guard";
-import { closePrescription, dispensePrescription, linkItemToMedicine } from "@/server/pharmacy/dispense";
+import { one, pool } from "@/lib/db";
+import { sendVisitToBilling } from "@/server/billing/invoices";
+import { closePrescription, dispensePrescription, linkItemToMedicine, substituteItem } from "@/server/pharmacy/dispense";
 import { adjustStock, PharmacyError, receiveStock, setReorderLevel } from "@/server/pharmacy/stock";
 
 export type PharmacyState =
@@ -35,10 +37,21 @@ export async function dispenseAction(_prev: PharmacyState, form: FormData): Prom
   }
   return guarded(async () => {
     const r = await dispensePrescription(user, prescriptionId, lines);
-    refresh(`/pharmacy/${prescriptionId}`);
+    // Hand the bill to billing straight away. If that cannot be done the medicines are still dispensed.
+    let billed = "";
+    try {
+      const rx = await one<{ visit_id: string | null }>(pool(), `SELECT visit_id FROM prescriptions WHERE prescription_id = $1`, [prescriptionId]);
+      if (rx?.visit_id) {
+        await sendVisitToBilling(user, rx.visit_id);
+        billed = " Sent to billing.";
+      }
+    } catch {
+      billed = " Billing can pick it up from the Billing page.";
+    }
+    refresh(`/pharmacy/${prescriptionId}`, "/billing");
     return {
       status: "ok",
-      message: `Dispensed. Total ${inr(r.total)}${r.prescriptionStatus === "dispensed" ? "." : "; part of the prescription is still outstanding."}`,
+      message: `Dispensed. Total ${inr(r.total)}.${r.prescriptionStatus === "dispensed" ? "" : " Part of the prescription is still outstanding."}${billed}`,
     };
   });
 }
@@ -49,6 +62,15 @@ export async function linkItemAction(_prev: PharmacyState, form: FormData): Prom
     await linkItemToMedicine(user, String(form.get("item_id") ?? ""), String(form.get("medicine_id") ?? ""));
     refresh(`/pharmacy/${String(form.get("prescription_id") ?? "")}`);
     return { status: "ok", message: "Matched." };
+  });
+}
+
+export async function substituteAction(_prev: PharmacyState, form: FormData): Promise<PharmacyState> {
+  const user = await requireStaff("pharmacy.dispense");
+  return guarded(async () => {
+    await substituteItem(user, String(form.get("item_id") ?? ""), String(form.get("medicine_id") ?? ""));
+    refresh(`/pharmacy/${String(form.get("prescription_id") ?? "")}`);
+    return { status: "ok", message: "Swapped to the alternative." };
   });
 }
 

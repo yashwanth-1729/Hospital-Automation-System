@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { closeAction, dispenseAction, linkItemAction, type PharmacyState } from "../actions";
+import { closeAction, dispenseAction, linkItemAction, substituteAction, type PharmacyState } from "../actions";
 
 const IDLE: PharmacyState = { status: "idle" };
 const input = "rounded-lg border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary";
@@ -25,6 +25,33 @@ export interface DispenseItem {
   next_expiry: string | null;
   linked: boolean;
   allergen: string | null;
+  alternatives: { medicine_id: string; name: string; available: number; unit_price: number | null }[];
+}
+
+function Alternatives({ prescriptionId, item }: { prescriptionId: string; item: DispenseItem }) {
+  const [state, action, pending] = useActionState(substituteAction, IDLE);
+  return (
+    <div className="mt-2 rounded-lg bg-warn-soft px-3 py-2 text-xs">
+      <p className="font-medium text-warn">Not enough in stock. Same medicine, other brands:</p>
+      {item.alternatives.length === 0 ? (
+        <p className="mt-1 text-muted">No other brand in stock. Give what is available, or close the prescription below.</p>
+      ) : (
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          {item.alternatives.map((a) => (
+            <form key={a.medicine_id} action={action}>
+              <input type="hidden" name="prescription_id" value={prescriptionId} />
+              <input type="hidden" name="item_id" value={item.item_id} />
+              <input type="hidden" name="medicine_id" value={a.medicine_id} />
+              <button disabled={pending} className="rounded-full border border-primary bg-surface px-3 py-1 text-primary hover:bg-primary-soft disabled:opacity-60">
+                Use {a.name} ({a.available} in stock{a.unit_price !== null ? `, ₹${a.unit_price}` : ""})
+              </button>
+            </form>
+          ))}
+        </div>
+      )}
+      {state.status === "error" && <p className="mt-1 text-danger">{state.message}</p>}
+    </div>
+  );
 }
 
 export function DispenseForm({ prescriptionId, items }: { prescriptionId: string; items: DispenseItem[] }) {
@@ -63,6 +90,7 @@ export function DispenseForm({ prescriptionId, items }: { prescriptionId: string
                     {i.instructions && <div className="text-xs text-muted">{i.instructions}</div>}
                     {i.allergen && <div className="mt-1 text-xs font-medium text-danger">Matches recorded allergy: {i.allergen}</div>}
                     {!i.linked && !done && <div className="mt-1 text-xs text-warn">Not in the formulary: match it below.</div>}
+                    {short && i.given === 0 && <Alternatives prescriptionId={prescriptionId} item={i} />}
                   </td>
                   <td className="num px-3 py-3 align-top">
                     {i.prescribed}
@@ -102,7 +130,7 @@ export function DispenseForm({ prescriptionId, items }: { prescriptionId: string
           Total <span className="text-lg font-semibold">₹{total.toFixed(2)}</span>
         </div>
         <button disabled={pending} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
-          {pending ? "Dispensing…" : "Dispense"}
+          {pending ? "Dispensing…" : "Dispense and send to billing"}
         </button>
       </div>
     </form>

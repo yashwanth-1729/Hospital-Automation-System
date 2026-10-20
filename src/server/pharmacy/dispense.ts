@@ -269,6 +269,57 @@ export async function dispensePrescription(actor: Actor, prescriptionId: string,
   });
 }
 
+export interface Alternative {
+  medicine_id: string;
+  name: string;
+  available: number;
+  unit_price: number | null;
+}
+
+/** Other brands of the same generic that are in stock now: safe to hand over in place of the one prescribed. */
+export async function alternativesFor(db: Db, medicineId: string): Promise<Alternative[]> {
+  return many<Alternative>(
+    db,
+    `SELECT m.medicine_id, m.name,
+            COALESCE(sum(b.quantity_on_hand), 0)::int AS available,
+            (SELECT x.unit_price::float FROM medicine_batches x WHERE x.medicine_id = m.medicine_id AND x.quantity_on_hand > 0 AND x.expiry_date >= $2
+              ORDER BY x.expiry_date, x.batch_id LIMIT 1) AS unit_price
+       FROM medicines m
+       JOIN medicines orig ON orig.medicine_id = $1 AND lower(orig.generic_name) = lower(m.generic_name) AND orig.form = m.form
+       JOIN medicine_batches b ON b.medicine_id = m.medicine_id AND b.quantity_on_hand > 0 AND b.expiry_date >= $2
+      WHERE m.active AND m.medicine_id <> $1
+      GROUP BY m.medicine_id, m.name
+      ORDER BY available DESC, m.name
+      LIMIT 4`,
+    [medicineId, istDateString()],
+  );
+}
+
+/** Swaps a prescribed item for another brand of the same generic and form. Recorded against the pharmacist. */
+export async function substituteItem(actor: Actor, itemId: string, medicineId: string): Promise<void> {
+  requireDispense(actor);
+  await tx(async (c) => {
+    const item = await one<{ status: string; medicine_id: string | null; dispensed_qty: number }>(
+      c,
+      `SELECT rx.status, i.medicine_id, i.dispensed_qty FROM prescription_items i JOIN prescriptions rx ON rx.prescription_id = i.prescription_id
+        WHERE i.item_id = $1 FOR UPDATE OF i`,
+      [itemId],
+    );
+    if (!item) throw new PharmacyError("item_not_found", "That item does not exist.");
+    if (item.status !== "issued" && item.status !== "partially_dispensed") throw new PharmacyError("wrong_state", "This prescription is closed.");
+    if (!item.medicine_id || item.dispensed_qty > 0) throw new PharmacyError("wrong_state", "This item cannot be swapped.");
+    const same = await one(
+      c,
+      `SELECT 1 FROM medicines a JOIN medicines b ON lower(a.generic_name) = lower(b.generic_name) AND a.form = b.form
+        WHERE a.medicine_id = $1 AND b.medicine_id = $2 AND b.active`,
+      [item.medicine_id, medicineId],
+    );
+    if (!same) throw new PharmacyError("medicine_not_found", "Only another brand of the same medicine can be used in its place.");
+    await c.query(`UPDATE prescription_items SET medicine_id = $2 WHERE item_id = $1`, [itemId, medicineId]);
+    await audit(c, { workflow: "clinic", actor: "staff", action: "prescription.item_substituted", recordId: itemId, details: { from: item.medicine_id, to: medicineId } });
+  });
+}
+
 /** The doctor wrote a name the formulary does not know; the pharmacist says which product it is. */
 export async function linkItemToMedicine(actor: Actor, itemId: string, medicineId: string): Promise<void> {
   requireDispense(actor);

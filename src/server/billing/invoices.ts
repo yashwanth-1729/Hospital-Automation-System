@@ -220,6 +220,16 @@ export async function createInvoice(actor: Actor, opts: { patientId: string; vis
  */
 export async function createInvoiceForVisit(actor: Actor, visitId: string): Promise<{ invoiceId: string; existing: boolean }> {
   need(actor, "billing.manage", "Only billing can create invoices.");
+  return draftForVisit(actor.user_id, visitId);
+}
+
+/** The pharmacy hands a visit's bill to billing: the same pre-filled draft, without needing billing rights. */
+export async function sendVisitToBilling(actor: Actor, visitId: string): Promise<{ invoiceId: string; existing: boolean }> {
+  need(actor, "pharmacy.dispense", "Only the pharmacy can send a bill to billing.");
+  return draftForVisit(actor.user_id, visitId);
+}
+
+async function draftForVisit(userId: string, visitId: string): Promise<{ invoiceId: string; existing: boolean }> {
   return tx(async (c) => {
     const visit = await one<{ patient_id: string }>(c, `SELECT patient_id FROM visits WHERE visit_id = $1 FOR UPDATE`, [visitId]);
     if (!visit) throw new BillingError("not_found", "That visit does not exist.");
@@ -233,7 +243,7 @@ export async function createInvoiceForVisit(actor: Actor, visitId: string): Prom
       invoiceId = newId("INV");
       await c.query(
         `INSERT INTO invoices (invoice_id, patient_id, visit_id, created_by, correlation_id) VALUES ($1, $2, $3, $4, $5)`,
-        [invoiceId, visit.patient_id, visitId, actor.user_id, newCorrelationId()],
+        [invoiceId, visit.patient_id, visitId, userId, newCorrelationId()],
       );
     }
 

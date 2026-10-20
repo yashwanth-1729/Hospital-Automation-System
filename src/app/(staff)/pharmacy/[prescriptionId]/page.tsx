@@ -7,7 +7,7 @@ import { many, pool } from "@/lib/db";
 import { allergyConflicts, FREQUENCIES, TIMINGS } from "@/lib/prescribing";
 import { formatDateOnly, formatDateTime } from "@/lib/time";
 import { requireStaff } from "@/server/auth/guard";
-import { getPrescription } from "@/server/pharmacy/dispense";
+import { alternativesFor, getPrescription } from "@/server/pharmacy/dispense";
 import { CloseForm, DispenseForm, LinkItemForm } from "./forms";
 
 export const metadata = { title: "Dispense" };
@@ -29,6 +29,12 @@ export default async function DispensePage({ params }: { params: Promise<{ presc
   const open = rx.status === "issued" || rx.status === "partially_dispensed";
   const conflicts = allergyConflicts(rx.allergies, rx.items.map((i) => ({ medicine_name: i.medicine_name, generic_name: i.generic_name })));
   const flagged = new Map(conflicts.map((c) => [c.index, c.allergen]));
+  const alts = new Map<string, Awaited<ReturnType<typeof alternativesFor>>>();
+  if (open) {
+    for (const i of rx.items) {
+      if (i.medicine_id && i.dispensed_qty === 0 && i.available < i.quantity) alts.set(i.item_id, await alternativesFor(pool(), i.medicine_id));
+    }
+  }
   const unlinked = rx.items.filter((i) => !i.medicine_id && i.dispensed_qty < i.quantity);
   const formulary = unlinked.length
     ? await many<{ medicine_id: string; name: string }>(pool(), `SELECT medicine_id, name FROM medicines WHERE active ORDER BY name`)
@@ -67,6 +73,7 @@ export default async function DispensePage({ params }: { params: Promise<{ presc
         <div className="p-4">
           {open ? (
             <DispenseForm
+              key={rx.items.map((i) => `${i.item_id}:${i.medicine_id}:${i.available}:${i.dispensed_qty}`).join("|")}
               prescriptionId={rx.prescription_id}
               items={rx.items.map((i, index) => ({
                 item_id: i.item_id,
@@ -81,6 +88,7 @@ export default async function DispensePage({ params }: { params: Promise<{ presc
                 next_expiry: i.next_expiry ? formatDateOnly(i.next_expiry) : null,
                 linked: !!i.medicine_id,
                 allergen: flagged.get(index) ?? null,
+                alternatives: alts.get(i.item_id) ?? [],
               }))}
             />
           ) : (
