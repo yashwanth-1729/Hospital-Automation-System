@@ -65,6 +65,11 @@ export function ruleBasedSummary(m: ReturnType<typeof import("@/server/reports")
   if (m.messages_failed > 0) exceptions.push(`${m.messages_failed} patient messages failed to send.`);
   if (m.no_shows > 0) exceptions.push(`${m.no_shows} patients did not attend.`);
   if (m.open_exceptions > 0) overdue.push(`${m.open_exceptions} items are open in the exception queue.`);
+  if (m.chronic_reminders_30d > 0) wins.push(`${m.chronic_reminders_30d} chronic-care patients were reminded of their review on WhatsApp.`);
+  if (m.lab_patients_told_7d > 0) wins.push(`${m.lab_patients_told_7d} patients were told their lab report was ready.`);
+  if (m.lab_abnormal_open > 0) exceptions.push(`${m.lab_abnormal_open} abnormal lab results are waiting for a doctor.`);
+  if (m.chronic_overdue > 0) overdue.push(`${m.chronic_overdue} chronic-care patients are overdue for their review.`);
+  if (m.lab_reports_awaiting_review > 0) overdue.push(`${m.lab_reports_awaiting_review} lab reports are ready but not yet reviewed.`);
 
   if (m.no_slot_available > 0) questions.push("Should more slots be opened in the departments that ran out?");
   if (m.no_shows > 0) questions.push("Should the reminder timing be reviewed for departments with the most no-shows?");

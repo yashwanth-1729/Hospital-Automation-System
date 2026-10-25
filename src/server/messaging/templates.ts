@@ -125,6 +125,22 @@ export const TEMPLATES = {
       `Hello ${v.patient_name}, this is a reminder from ${v.hospital_name} that ${v.balance} is still due on invoice ${v.invoice_number}. ` +
       `You can pay at the billing counter, or call ${v.hospital_contact} if you have any questions.`,
   },
+  CARE_RECALL_01: {
+    providerName: "care_recall_01",
+    category: "utility",
+    params: ["patient_name", "condition", "hospital_name", "due_date", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, your regular ${v.condition} check-up at ${v.hospital_name} is due on ${v.due_date}. ` +
+      `Regular reviews help keep your health on track. Please call ${v.hospital_contact} to book a convenient time, and we will be glad to see you.`,
+  },
+  LAB_REPORT_READY_01: {
+    providerName: "lab_report_ready_01",
+    category: "utility",
+    params: ["patient_name", "test_name", "hospital_name", "hospital_contact"],
+    render: (v) =>
+      `Hello ${v.patient_name}, your ${v.test_name} report from ${v.hospital_name} is ready. ` +
+      `Please visit your doctor to go through the results, or call ${v.hospital_contact} to book a time. Thank you.`,
+  },
   APPT_REMINDER_01: {
     providerName: "appt_reminder_01",
     category: "utility",

@@ -16,7 +16,7 @@ import { TEMPLATES, type TemplateDef } from "../src/server/messaging/templates";
 // Meta requires a realistic example for every variable. Only used for review.
 const EXAMPLES: Record<string, string> = {
   patient_name: "Rahul Sharma",
-  hospital_name: "DemoCare Multispeciality Hospital",
+  hospital_name: "Clevo Demo Hospital",
   hospital_contact: "+91 80000 00000",
   emergency_number: "108",
   department: "Cardiology",
@@ -32,6 +32,9 @@ const EXAMPLES: Record<string, string> = {
   invoice_number: "INV-2026-000123",
   balance_line: "Balance due: ₹522.25.",
   balance: "₹522.25",
+  condition: "diabetes",
+  due_date: "Fri, 16 Oct 2026",
+  test_name: "HbA1c",
 };
 
 function body(def: TemplateDef): { text: string; example: string[] } {

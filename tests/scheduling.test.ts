@@ -235,6 +235,13 @@ describe("daily management summary", () => {
       open_exceptions: 3,
       exception_types: [],
       departments: [],
+      chronic_patients_enrolled: 0,
+      chronic_due_this_week: 0,
+      chronic_overdue: 0,
+      chronic_reminders_30d: 0,
+      lab_reports_awaiting_review: 0,
+      lab_abnormal_open: 0,
+      lab_patients_told_7d: 0,
     });
     expect(summary.headline).toBe("10 enquiries, 7 booked, 2 no-shows over the last 7 day(s).");
     expect(summary.wins.join(" ")).toContain("3 seconds");

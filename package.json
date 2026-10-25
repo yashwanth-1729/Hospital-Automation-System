@@ -17,6 +17,7 @@
     "dev:all": "concurrently -k -n web,worker -c cyan,magenta \"next dev\" \"tsx watch src/worker/index.ts\"",
     "db:demo": "tsx scripts/demo-data.ts",
     "db:demo:clinic": "tsx scripts/demo-clinic.ts",
+    "db:demo:care": "tsx scripts/demo-care.ts",
     "retention": "tsx scripts/retention.ts",
     "preflight": "tsx scripts/preflight.ts",
     "templates": "tsx scripts/register-templates.ts",

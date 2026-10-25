@@ -2,12 +2,13 @@ import "@/lib/load-env";
 import { hostname } from "node:os";
 import { closePool, pool } from "@/lib/db";
 import { env } from "@/lib/env";
-import { heartbeat, reapStaleJobs, retentionOnce, runOnce, sweepOnce } from "./runner";
+import { careOnce, heartbeat, reapStaleJobs, retentionOnce, runOnce, sweepOnce } from "./runner";
 
 const POLL_MS = 1000;
 const HEARTBEAT_MS = 10_000;
 const REAP_MS = 60_000;
 const SWEEP_MS = 60_000;
+const CARE_MS = 600_000; // recalls and lab chasing every 10 minutes; each step happens once
 const RETENTION_MS = 3_600_000; // hourly check; the purge itself runs once a day
 
 const workerId = `${hostname()}:${process.pid}`;
@@ -27,6 +28,7 @@ async function main() {
   let lastReap = 0;
   let lastSweep = 0;
   let lastRetention = 0;
+  let lastCare = 0;
 
   while (!stopping) {
     const now = Date.now();
@@ -44,6 +46,11 @@ async function main() {
         const missed = await sweepOnce();
         if (missed.length) log("marked no-shows", { count: missed.length });
         lastSweep = now;
+      }
+      if (now - lastCare > CARE_MS) {
+        const r = await careOnce();
+        if (r.reminded || r.escalated || r.labs) log("care sweep", r);
+        lastCare = now;
       }
       if (now - lastRetention > RETENTION_MS) {
         const purged = await retentionOnce();

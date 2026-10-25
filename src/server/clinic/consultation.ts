@@ -9,6 +9,7 @@ import { can, type Role } from "@/lib/rbac";
 import { addDays, formatDateOnly, isValidDateString, istAt, istDateString } from "@/lib/time";
 import { sendTemplateMessage } from "@/server/messaging/send";
 import { JOB } from "@/server/workflows/job-types";
+import { enrolFromConsultation } from "@/server/care/care";
 import { completeVisit } from "./visits";
 
 /** Who is acting. A StaffUser satisfies this. */
@@ -404,6 +405,8 @@ async function writeConsultation(
       );
     }
     await completeVisit(c, visitId);
+    // A chronic diagnosis puts the patient on a repeat-visit plan, or restarts its clock.
+    await enrolFromConsultation(c, consultationId);
     await audit(c, {
       workflow: "clinic",
       actor: "staff",

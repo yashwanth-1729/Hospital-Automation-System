@@ -107,7 +107,8 @@ async function smoothScroll(page, y, ms = 1200) {
 
 let browser;
 
-async function scene(name, { login, start, run }) {
+async function scene(name, { before, login, start, run }) {
+  if (before) await sleep(before);
   const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: SCALE, locale: "en-GB", timezoneId: "Asia/Kolkata" });
   await context.addInitScript(CURSOR);
   const page = await context.newPage();
@@ -181,6 +182,7 @@ const SCENES = {
 
   // The WhatsApp messages the patient received.
   phone: {
+    before: 20000, // let the worker send both WhatsApp messages
     login: "Admin",
     start: `/phone?to=${encodeURIComponent("+91" + ENQUIRY_PHONE)}`,
     run: async () => {

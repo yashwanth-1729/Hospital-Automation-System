@@ -40,6 +40,8 @@ const NAV: { heading?: string; items: Item[] }[] = [
     heading: "After the visit",
     items: [
       { href: "/discharges", label: "Discharges", capability: "discharges.manage", icon: "discharge" },
+      { href: "/care", label: "Chronic care", capability: "care.view", icon: "repeat" },
+      { href: "/labs", label: "Lab follow-ups", capability: "care.view", icon: "flask" },
       { href: "/follow-ups", label: "Follow-ups", capability: "followups.manage", icon: "bell" },
       { href: "/feedback", label: "Feedback", capability: "feedback.view", icon: "heart" },
       { href: "/exceptions", label: "Exceptions", capability: "exceptions.manage", icon: "alert", badge: "exceptions" },

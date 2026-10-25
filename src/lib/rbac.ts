@@ -60,6 +60,10 @@ export const CAPABILITIES = [
   "imaging.order",
   "imaging.view",
   "imaging.report",
+  // Chronic care and lab follow-ups
+  "care.view",
+  "care.manage",
+  "labs.review",
   // Assistant
   "assistant.use",
   // Administration
@@ -76,6 +80,8 @@ const GRANTS: Record<Role, readonly Capability[]> = {
     "appointments.manage",
     "discharges.manage",
     "followups.manage",
+    "care.view",
+    "care.manage",
     "feedback.view",
     "exceptions.manage",
     "patients.view",
@@ -91,11 +97,11 @@ const GRANTS: Record<Role, readonly Capability[]> = {
   ],
   doctor: [
     "dashboard.view", "appointments.view", "patients.view", "queue.view", "records.view", "vitals.record", "consult.write",
-    "ipd.view", "ipd.discharge", "imaging.order", "imaging.view",
+    "ipd.view", "ipd.discharge", "imaging.order", "imaging.view", "care.view", "labs.review",
   ],
   nurse: [
     "dashboard.view", "appointments.view", "discharges.manage", "patients.view", "queue.view", "records.view", "vitals.record",
-    "ipd.view", "ipd.admit", "ipd.transfer", "ipd.discharge", "ipd.beds", "imaging.view",
+    "ipd.view", "ipd.admit", "ipd.transfer", "ipd.discharge", "ipd.beds", "imaging.view", "care.view", "care.manage",
   ],
   pharmacist: ["dashboard.view", "patients.view", "pharmacy.dispense", "pharmacy.stock"],
   billing: ["dashboard.view", "patients.view", "billing.view", "billing.collect", "billing.manage", "ipd.view"],

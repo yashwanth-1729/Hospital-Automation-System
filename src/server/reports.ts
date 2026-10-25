@@ -1,5 +1,7 @@
 import { many, one, pool } from "@/lib/db";
 import { istDateString, istDayRange } from "@/lib/time";
+import { careStats, type CareStats } from "@/server/care/care";
+import { labStats, type LabStats } from "@/server/care/labs";
 
 export interface Funnel {
   enquiries: number;
@@ -196,18 +198,22 @@ export interface ReportBundle {
   sources: SourcePerformance[];
   health: WorkflowHealth;
   trend: DailyPoint[];
+  care: CareStats;
+  labs: LabStats;
 }
 
 export async function getReport(days: number): Promise<ReportBundle> {
-  const [funnel, response, departments, sources, health, trend] = await Promise.all([
+  const [funnel, response, departments, sources, health, trend, care, labs] = await Promise.all([
     getFunnel(days),
     getResponseTimes(days),
     getDepartmentPerformance(days),
     getSourcePerformance(days),
     getWorkflowHealth(days),
     getDailyTrend(days),
+    careStats(pool()),
+    labStats(pool()),
   ]);
-  return { days, funnel, response, departments, sources, health, trend };
+  return { days, funnel, response, departments, sources, health, trend, care, labs };
 }
 
 /** Aggregate numbers only: this is what may be sent to an AI provider for the summary. */
@@ -229,5 +235,12 @@ export function summaryMetrics(report: ReportBundle) {
     open_exceptions: report.health.exceptions_by_type.reduce((n, e) => n + e.open, 0),
     exception_types: report.health.exceptions_by_type.map((e) => ({ type: e.error_type, severity: e.severity, open: e.open })),
     departments: report.departments.map((d) => ({ name: d.department, leads: d.leads, booked: d.booked, no_shows: d.no_shows })),
+    chronic_patients_enrolled: report.care.enrolled,
+    chronic_due_this_week: report.care.due_this_week,
+    chronic_overdue: report.care.overdue,
+    chronic_reminders_30d: report.care.reminded_30d,
+    lab_reports_awaiting_review: report.labs.awaiting_review,
+    lab_abnormal_open: report.labs.abnormal_open,
+    lab_patients_told_7d: report.labs.patients_told_7d,
   };
 }

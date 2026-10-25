@@ -6,6 +6,8 @@ import { hospitalAnalytics } from "@/server/clinic/analytics";
 import { occupancy } from "@/server/ipd/admissions";
 import { stockOverview } from "@/server/pharmacy/stock";
 import { imagingCounts } from "@/server/radiology/imaging";
+import { careStats } from "@/server/care/care";
+import { labStats } from "@/server/care/labs";
 
 /** "Rahul Sharma" becomes "Rahul S.": enough to recognise a patient, not enough to identify them elsewhere. */
 function shortName(full: string): string {
@@ -45,7 +47,7 @@ export async function calendar(db: Db, from: string, to: string): Promise<Calend
   }));
 }
 
-const FEATURES = `Clevo is a hospital operating system plus WhatsApp automation. Screens: Dashboard; Reception (register patients, queue, tokens, check-in); Enquiries (leads from the website and ads); Appointments; Wards (beds, admit, transfer, discharge); Consultation (doctor: vitals, case sheet, prescription with allergy check, imaging orders); Radiology (worklist and reports); Pharmacy (dispensing, batch stock, expiry); Billing (invoices, payments, refunds, day book); Discharges, Follow-ups, Feedback, Exceptions (tasks the system will not decide alone); Analytics; Reports; Audits; Staff accounts. Roles: administrator, receptionist, doctor, nurse, pharmacist, billing, radiology. Patient WhatsApp messages are fixed approved templates. Emergencies and medical questions always go to a person.`;
+const FEATURES = `Clevo is a hospital operating system plus WhatsApp automation. Screens: Dashboard; Reception (register patients, queue, tokens, check-in); Enquiries (leads from the website and ads); Appointments; Wards (beds, admit, transfer, discharge); Consultation (doctor: vitals, case sheet, prescription with allergy check, imaging orders); Radiology (worklist and reports); Chronic care (diabetes, hypertension and thyroid patients reminded on WhatsApp before each repeat visit); Lab follow-ups (patients told when reports are ready, doctors chased for unreviewed and abnormal results); Pharmacy (dispensing, batch stock, expiry); Billing (invoices, payments, refunds, day book); Discharges, Follow-ups, Feedback, Exceptions (tasks the system will not decide alone); Analytics; Reports; Audits; Staff accounts. Roles: administrator, receptionist, doctor, nurse, pharmacist, billing, radiology. Patient WhatsApp messages are fixed approved templates. Emergencies and medical questions always go to a person.`;
 
 /** Everything the assistant is allowed to know, as plain numbers and short lists. No phone numbers, no emails. */
 export async function buildHospitalContext(db: Db): Promise<string> {
@@ -85,6 +87,7 @@ export async function buildHospitalContext(db: Db): Promise<string> {
     many<{ role: string; n: number }>(db, `SELECT role, count(*)::int AS n FROM staff_users WHERE active AND user_id <> 'USR-DEMO-HISTORY' GROUP BY role`),
     one<{ n: number }>(db, `SELECT count(*)::int AS n FROM leads WHERE status IN ('new', 'needs_review', 'no_slot')`),
   ]);
+  const [care, labs] = await Promise.all([careStats(db), labStats(db)]);
   const cal = await calendar(db, today, addDays(today, 6));
   const byDay = new Map<string, CalendarEntry[]>();
   for (const e of cal) byDay.set(e.date, [...(byDay.get(e.date) ?? []), e]);
@@ -109,6 +112,8 @@ export async function buildHospitalContext(db: Db): Promise<string> {
     `Inpatients admitted ${a.inpatients.admitted}, discharged ${a.inpatients.discharged} in ${a.days} days; average stay ${a.inpatients.average_stay_days ?? "n/a"} days.`,
     "",
     `Pharmacy stock: out of stock: ${stock.filter((s) => s.status === "out").map((s) => s.name).join(", ") || "none"}. Low: ${stock.filter((s) => s.status === "low").map((s) => `${s.name} (${s.available} left, reorder at ${s.reorder_level})`).join(", ") || "none"}. Expired units on the shelf: ${stock.filter((s) => s.expired > 0).map((s) => `${s.name} ${s.expired}`).join(", ") || "none"}. Expiring within 60 days: ${stock.filter((s) => s.expiring_soon > 0).map((s) => `${s.name} ${s.expiring_soon}`).join(", ") || "none"}. Top medicines dispensed: ${a.medicines.map((m) => `${m.name} ${m.quantity}`).join(", ")}.`,
+    `Chronic care: ${care.enrolled} patients enrolled (${care.diabetes} diabetes, ${care.hypertension} hypertension, ${care.thyroid} thyroid); ${care.due_this_week} due for review this week, ${care.overdue} overdue, ${care.reminded_30d} WhatsApp reminders sent in 30 days.`,
+    `Lab follow-ups: ${labs.awaiting_review} reports ready but not reviewed (${labs.abnormal_open} abnormal), ${labs.waiting_results} tests waiting for results, ${labs.patients_told_7d} patients told on WhatsApp in 7 days.`,
     `Radiology: ${imaging.ordered} waiting, ${imaging.in_progress} in progress, ${imaging.urgent_open} urgent open, ${imaging.reported_today} reported in the last day.`,
     "",
     `Enquiries (last 30 days): ${funnel.enquiries} received, ${funnel.auto_booked} booked automatically, ${funnel.staff_booked} by staff, ${funnel.needs_review} needed a person, ${funnel.no_slot} had no slot, ${funnel.no_shows} no-shows, ${funnel.attended} attended. Conversion ${funnel.conversion_rate ?? "n/a"}%, automation ${funnel.automation_rate ?? "n/a"}%. Median first response ${response.median_seconds ?? "n/a"} s. Open enquiries needing attention: ${leadsOpen?.n ?? 0}.`,

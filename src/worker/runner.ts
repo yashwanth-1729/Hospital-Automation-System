@@ -5,6 +5,8 @@ import { claimJobs, completeJob, failJob, reapStaleJobs, type Job } from "@/lib/
 import { MessagingError } from "@/server/messaging/providers";
 import { sweepNoShows } from "@/server/workflows/no-show";
 import { runRetention } from "@/server/workflows/retention";
+import { sweepCare } from "@/server/care/care";
+import { sweepLabs } from "@/server/care/labs";
 import { TemplateError } from "@/server/messaging/templates";
 import { getHandler, PermanentJobError } from "./handlers";
 
@@ -97,6 +99,20 @@ export async function retentionOnce(): Promise<number> {
     return result.messagesRedacted + result.enquiriesCleared + result.inboundCleared;
   } finally {
     await db.query(`SELECT pg_advisory_unlock(hashtext('retention'))`);
+  }
+}
+
+/** Chronic care recalls and lab review chasing. Both are idempotent; the lock just avoids double work. */
+export async function careOnce(): Promise<{ reminded: number; escalated: number; labs: number }> {
+  const db = pool();
+  const lock = await db.query<{ locked: boolean }>(`SELECT pg_try_advisory_lock(hashtext('care_sweep')) AS locked`);
+  if (!lock.rows[0]?.locked) return { reminded: 0, escalated: 0, labs: 0 };
+  try {
+    const care = await sweepCare();
+    const labs = await sweepLabs();
+    return { ...care, labs };
+  } finally {
+    await db.query(`SELECT pg_advisory_unlock(hashtext('care_sweep'))`);
   }
 }
 

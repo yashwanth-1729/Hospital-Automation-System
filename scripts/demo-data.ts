@@ -4,6 +4,7 @@ import { newCorrelationId, newId } from "../src/lib/ids";
 import { addDays, formatSlot, istAt, istDateString, istDayRange } from "../src/lib/time";
 import { generateClinicHistory } from "./demo-clinic";
 import { DEMO_DEPARTMENTS, DEMO_DOCTORS, seed } from "./seed";
+import { generateCareDemo } from "./demo-care";
 
 /**
  * Fills the demo hospital with a realistic month of history so the dashboard and reports
@@ -439,6 +440,9 @@ export async function generateDemoData(connectionString: string, days = 30) {
 
   // The hospital operating system's side: visits, prescriptions, dispensing, invoices, wards.
   await generateClinicHistory(connectionString, { days: Math.min(days, 21) });
+
+  // Chronic care plans and lab follow-ups for the demo patients.
+  await generateCareDemo(connectionString);
 }
 
 if (process.argv[1]?.endsWith("demo-data.ts")) {
