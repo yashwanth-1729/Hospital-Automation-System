@@ -16,9 +16,8 @@ export default async function EnquiryPage() {
     <div className="min-h-screen bg-gradient-to-b from-primary-soft to-bg">
       <div className="mx-auto max-w-xl px-4 py-10">
         <header className="mb-6 text-center">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-primary text-xl font-bold text-white">
-            {e.HOSPITAL_NAME.charAt(0)}
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/clevo-logo.png" alt="" width={56} height={56} className="logo-pop mx-auto mb-3 h-14 w-14" />
           <h1 className="text-2xl font-semibold tracking-tight">{e.HOSPITAL_NAME}</h1>
           <p className="mt-1 text-sm text-muted">Request an appointment. We will confirm on WhatsApp.</p>
         </header>

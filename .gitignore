@@ -5,3 +5,9 @@ out/
 .env.local
 *.tsbuildinfo
 next-env.d.ts
+
+video/node_modules/
+video/.env
+video/out/
+video/public/rec/
+video/public/vo/
