@@ -216,6 +216,21 @@ export async function getReport(days: number): Promise<ReportBundle> {
   return { days, funnel, response, departments, sources, health, trend, care, labs };
 }
 
+/** Plain words for the kinds of task the system raises, so summaries never show internal codes. */
+const TASK_LABEL: Record<string, string> = {
+  CARE_OVERDUE: "chronic-care patients overdue for review",
+  LAB_ABNORMAL: "abnormal lab results for a doctor",
+  LAB_REVIEW_OVERDUE: "lab reports waiting for review",
+  NEEDS_HUMAN_REVIEW: "enquiries needing a person",
+  NO_SLOT_AVAILABLE: "enquiries with no free slot",
+  CLINICAL_EMERGENCY_MENTIONED: "possible emergencies to call back",
+  NEGATIVE_FEEDBACK: "unhappy patients to call",
+  NO_SHOW_ESCALATION: "missed appointments to call",
+  MESSAGE_FAILED: "messages that failed",
+  NO_MESSAGING_CONSENT: "patients without WhatsApp consent",
+  JOB_FAILED: "automation errors",
+};
+
 /** Aggregate numbers only: this is what may be sent to an AI provider for the summary. */
 export function summaryMetrics(report: ReportBundle) {
   return {
@@ -232,8 +247,8 @@ export function summaryMetrics(report: ReportBundle) {
     cancelled: report.funnel.cancelled,
     messages_sent: report.health.messages_sent,
     messages_failed: report.health.messages_failed,
-    open_exceptions: report.health.exceptions_by_type.reduce((n, e) => n + e.open, 0),
-    exception_types: report.health.exceptions_by_type.map((e) => ({ type: e.error_type, severity: e.severity, open: e.open })),
+    open_tasks: report.health.exceptions_by_type.reduce((n, e) => n + e.open, 0),
+    tasks_needing_attention: report.health.exceptions_by_type.map((e) => ({ kind: TASK_LABEL[e.error_type] ?? e.error_type.toLowerCase().replaceAll("_", " "), severity: e.severity, open: e.open })),
     departments: report.departments.map((d) => ({ name: d.department, leads: d.leads, booked: d.booked, no_shows: d.no_shows })),
     chronic_patients_enrolled: report.care.enrolled,
     chronic_due_this_week: report.care.due_this_week,

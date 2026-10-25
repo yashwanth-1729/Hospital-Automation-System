@@ -18,6 +18,16 @@ const SUGGESTIONS = [
   "Which doctor has the longest waiting time?",
 ];
 
+/** Models sometimes answer in markdown anyway: show **bold** as bold and drop stray heading marks. */
+function Rich({ text }: { text: string }) {
+  const clean = text.replace(/^#{1,6}\s+/gm, "").replace(/^\s*[-*]\s+/gm, "• ");
+  return (
+    <>
+      {clean.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part.replace(/\*/g, "")))}
+    </>
+  );
+}
+
 export function AssistantChat() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState("");
@@ -62,7 +72,9 @@ export function AssistantChat() {
         )}
         {turns.map((t, i) => (
           <div key={i} className={`pop-in flex ${t.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap ${t.role === "user" ? "bg-primary text-white" : "bg-surface-2"}`}>{t.content}</div>
+            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap ${t.role === "user" ? "bg-primary text-white" : "bg-surface-2"}`}>
+              {t.role === "user" ? t.content : <Rich text={t.content} />}
+            </div>
           </div>
         ))}
         {busy && (
