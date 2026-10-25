@@ -59,18 +59,25 @@ export async function generateCareDemo(connectionString: string): Promise<void> 
       const last = addDays(next, -interval);
       const reminders = daysToDue <= 3 ? (daysToDue <= -7 ? 2 : 1) : 0;
       const remindedAt = reminders ? `${addDays(today, Math.max(-25, Math.min(0, daysToDue + (reminders === 2 ? 7 : -3))))}T10:${String(between(0, 59)).padStart(2, "0")}:00+05:30` : null;
+      const planId = newId("CRP");
       await client.query(
         `INSERT INTO care_plans (plan_id, patient_id, condition, interval_days, last_visit_date, next_due_date, reminders_sent, last_reminded_at, source, correlation_id, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          ON CONFLICT (patient_id, condition) DO NOTHING`,
-        [newId("CRP"), p.patient_id, condition, interval, last, next, reminders, remindedAt, chance(0.7) ? "hms" : "clevo", newCorrelationId(), `${last}T11:00:00+05:30`],
+        [planId, p.patient_id, condition, interval, last, next, reminders, remindedAt, chance(0.7) ? "hms" : "clevo", newCorrelationId(), `${last}T11:00:00+05:30`],
       );
       plans++;
-      if (bucket === "overdue" && daysToDue <= -14 && chance(0.3)) {
+      // Long-overdue patients were escalated to the desk; most have already been called. The dedupe key
+      // matches the worker's, so it does not raise them again.
+      if (bucket === "overdue" && daysToDue <= -14) {
+        const handled = chance(0.85);
         await client.query(
-          `INSERT INTO exceptions (exception_id, workflow_name, record_id, error_type, severity, owner, due_at, summary, dedupe_key)
-           VALUES ($1, 'HOSPITAL | 05 Clinical Care', $2, 'CARE_OVERDUE', 'medium', 'front_desk', now() + interval '4 hours', $3, $4)`,
-          [newId("EXC"), p.patient_id, `${p.full_name} is overdue for their ${condition} review and has not replied to two reminders. Please call.`, `care-overdue-demo:${p.patient_id}`],
+          `INSERT INTO exceptions (exception_id, workflow_name, record_id, error_type, severity, owner, due_at, summary, dedupe_key,
+                                   status, resolved_at, resolution_note)
+           VALUES ($1, 'HOSPITAL | 05 Clinical Care', $2, 'CARE_OVERDUE', 'medium', 'front_desk', now() + interval '4 hours', $3, $4, $5, $6, $7)`,
+          [newId("EXC"), planId, `${p.full_name} is overdue for their ${condition} review and has not replied to two reminders. Please call.`,
+            `care-overdue:${planId}:${next}`, handled ? "resolved" : "open", handled ? new Date(Date.now() - between(2, 72) * 3_600_000) : null,
+            handled ? "Called the patient; review booked." : null],
         );
       }
     }
@@ -85,7 +92,7 @@ export async function generateCareDemo(connectionString: string): Promise<void> 
       const doctor = pick(DEMO_DOCTORS).name;
       const state = i < 12 ? "waiting" : i < 32 ? "review" : "done";
       const orderedHoursAgo = state === "waiting" ? between(4, 80) : between(30, 160);
-      const readyHoursAgo = state === "waiting" ? null : state === "review" ? between(1, 40) : between(20, Math.max(21, orderedHoursAgo - 4));
+      const readyHoursAgo = state === "waiting" ? null : state === "review" ? between(1, 26) : between(20, Math.max(21, orderedHoursAgo - 4));
       const abnormal = state !== "waiting" && chance(state === "review" ? 0.22 : 0.15);
       const id = newId("LAB");
       await client.query(
