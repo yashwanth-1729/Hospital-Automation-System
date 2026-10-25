@@ -112,9 +112,9 @@ async function smoothScroll(page, y, ms = 1200) {
 
 let browser;
 
-async function scene(name, { before, login, start, run }) {
+async function scene(name, { before, login, start, run, view = VIEW }) {
   if (before) await sleep(before);
-  const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: SCALE, locale: "en-GB", timezoneId: "Asia/Kolkata" });
+  const context = await browser.newContext({ viewport: view, deviceScaleFactor: SCALE, locale: "en-GB", timezoneId: "Asia/Kolkata" });
   await context.addInitScript(CURSOR);
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
@@ -133,12 +133,16 @@ async function scene(name, { before, login, start, run }) {
     frames.push({ data: f.data, t: f.metadata.timestamp });
     try { await cdp.send("Page.screencastFrameAck", { sessionId: f.sessionId }); } catch {}
   });
-  await cdp.send("Page.startScreencast", { format: "jpeg", quality: 92, maxWidth: VIEW.width * SCALE, maxHeight: VIEW.height * SCALE, everyNthFrame: 1 });
+  await cdp.send("Page.startScreencast", { format: "jpeg", quality: 92, maxWidth: view.width * SCALE, maxHeight: view.height * SCALE, everyNthFrame: 1 });
   const t0 = Date.now() / 1000;
   marks = [];
   await sleep(600);
   try {
     await run(page);
+  } catch (err) {
+    await page.screenshot({ path: path.join(OUT, `${name}-error.png`) }).catch(() => {});
+    console.error(`${name} failed at ${page.url()}: ${err.message.split(String.fromCharCode(10))[0]}`);
+    throw err;
   } finally {
     await sleep(1200);
     await cdp.send("Page.stopScreencast").catch(() => {});
@@ -147,15 +151,15 @@ async function scene(name, { before, login, start, run }) {
     const start = frames[0]?.t ?? t0;
     writeFileSync(
       path.join(OUT, `${name}.json`),
-      JSON.stringify({ width: VIEW.width, height: VIEW.height, duration: t1 - start, marks: (marks ?? []).map((m) => ({ ...m, t: +(m.t - start).toFixed(3) })) }),
+      JSON.stringify({ width: view.width, height: view.height, duration: t1 - start, marks: (marks ?? []).map((m) => ({ ...m, t: +(m.t - start).toFixed(3) })) }),
     );
     marks = null;
-    stitch(name, frames, t0, t1);
+    stitch(name, frames, t0, t1, view);
   }
 }
 
 // Screencast frames arrive only when the page changes: each is held until the next one.
-function stitch(name, frames, t0, t1) {
+function stitch(name, frames, t0, t1, view = VIEW) {
   const dir = path.join(OUT, `_${name}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
@@ -170,7 +174,7 @@ function stitch(name, frames, t0, t1) {
   writeFileSync(path.join(dir, "list.txt"), lines.join("\n"));
   const out = path.join(OUT, `${name}.mp4`);
   execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", path.join(dir, "list.txt"),
-    "-vf", `fps=30,scale=${VIEW.width * SCALE}:${VIEW.height * SCALE}:flags=lanczos,format=yuv420p`,
+    "-vf", `fps=60,scale=${view.width * SCALE}:${view.height * SCALE}:flags=lanczos,format=yuv420p`,
     "-c:v", "libx264", "-preset", "slow", "-crf", "14", out]);
   rmSync(dir, { recursive: true, force: true });
   console.log(`${name}: ${frames.length} frames, ${(t1 - t0).toFixed(1)}s -> ${out}`);
@@ -186,7 +190,7 @@ const SCENES = {
       await select(page, page.locator('select[name="department"]'), "Cardiology");
       await click(page, page.locator('input[name="preferred_date"]'), 100);
       await page.locator('input[name="preferred_date"]').fill(tomorrow());
-      await type(page, page.locator('textarea[name="enquiry_text"]'), "I get chest pain when I climb stairs. I would like to see a heart specialist.", 22);
+      await type(page, page.locator('textarea[name="enquiry_text"]'), "I would like a routine check-up with a heart specialist for my blood pressure.", 22);
       await click(page, page.getByRole("button", { name: "Request appointment" }), 300);
       await sleep(3500);
     },
@@ -215,13 +219,14 @@ const SCENES = {
       await click(page, page.getByRole("button", { name: "Register patient" }), 300);
       await page.waitForURL(/\/reception\?q=/);
       await sleep(1500);
-      const doctor = page.locator('select[name="doctor_id"]').first();
+      const form = page.locator('form:has(select[name="doctor_id"])').first();
+      const doctor = form.locator('select[name="doctor_id"]');
       await click(page, doctor, 150);
       const option = await doctor.locator("option", { hasText: "Ananya Rao" }).first().getAttribute("value");
       await doctor.selectOption(option);
       await sleep(300);
-      await type(page, page.locator('input[name="reason"]').first(), "Chest pain on exertion", 30);
-      await click(page, page.getByRole("button", { name: "Issue token" }).first(), 300);
+      await type(page, form.locator('input[name="reason"]'), "Blood pressure review", 30);
+      await click(page, form.getByRole("button", { name: "Issue token" }), 300);
       await sleep(3000);
     },
   },
@@ -232,19 +237,19 @@ const SCENES = {
     start: "/consult",
     run: async (page) => {
       await sleep(1200);
-      await click(page, page.getByRole("button", { name: "Call in" }).first(), 300);
+      await click(page, page.locator("li", { hasText: PATIENT }).getByRole("button", { name: "Call in" }), 300);
       await page.waitForURL(/\/consult\/VIS/);
       await sleep(1800);
-      await type(page, page.locator('textarea[name="chief_complaint"]'), "Chest pain on climbing stairs for 2 weeks", 24);
-      await type(page, page.locator('textarea[name="diagnosis"]'), "Stable angina, to be evaluated", 26);
-      await type(page, page.locator('textarea[name="advice"]'), "Avoid heavy exertion. Walk 20 minutes daily.", 22);
+      await type(page, page.locator('textarea[name="chief_complaint"]'), "Blood pressure review, occasional headaches", 24);
+      await type(page, page.locator('textarea[name="diagnosis"]'), "Essential hypertension", 26);
+      await type(page, page.locator('textarea[name="advice"]'), "Reduce salt. Walk 30 minutes daily. Review in 3 months.", 22);
       const med = page.locator('input[name="items.0.medicine_name"]');
       await type(page, med, "Amoxicillin 500 mg", 45);
       await moveTo(page, med);
       await sleep(2600); // the allergy warning appears
-      await type(page, med, "Aspirin 75 mg", 45);
+      await type(page, med, "Amlodipine 5 mg", 45);
       await click(page, page.getByRole("button", { name: "+ Add medicine" }), 300);
-      await type(page, page.locator('input[name="items.1.medicine_name"]'), "Atorvastatin 20 mg", 45);
+      await type(page, page.locator('input[name="items.1.medicine_name"]'), "Telmisartan 40 mg", 45);
       await sleep(800);
       await click(page, page.getByRole("button", { name: "Finish consultation" }), 300);
       await sleep(3500);
@@ -286,15 +291,16 @@ const SCENES = {
   // The owner's view and the assistant.
   analytics: {
     login: "Admin",
+    view: { width: 900, height: 1100 }, // a narrower page wraps the answer into a block the camera can fill the frame with
     start: "/analytics?days=30",
     run: async (page) => {
       await sleep(1000);
-      await type(page, page.getByLabel("Ask the assistant"), "What needs my attention today?", 28);
+      await type(page, page.getByLabel("Ask the assistant"), "How much did we collect in the last two weeks, and what is still unpaid?", 28);
       await click(page, page.getByRole("button", { name: /Ask/ }).last(), 300);
-      await page.locator(".pop-in").nth(1).waitFor({ timeout: 45000 });
-      await sleep(4500);
-      await smoothScroll(page, 700, 2500);
-      await sleep(1500);
+      await page.locator('[aria-label="Thinking"]').waitFor({ state: "detached", timeout: 60000 });
+      await sleep(600);
+      await moveTo(page, page.locator(".pop-in").last());
+      await sleep(6000);
     },
   },
 
@@ -371,7 +377,7 @@ const SCENES = {
 
 const only = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
-browser = await chromium.launch();
+browser = await chromium.launch({ args: ["--lang=en-GB"] });
 try {
   for (const [name, s] of Object.entries(SCENES)) {
     if (only.length && !only.includes(name)) continue;
