@@ -14,8 +14,8 @@ const FFMPEG =
   process.env.FFMPEG ||
   "C:/Users/ASUS/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1-full_build/bin/ffmpeg.exe";
 const OUT = path.resolve("public/rec");
-const VIEW = { width: 1600, height: 1000 };
-const SCALE = 1.5; // frames are 2400x1500
+const VIEW = { width: 1280, height: 1100 }; // tall enough to frame well in 4:5
+const SCALE = 2; // frames are 2560x2200
 const PATIENT = "Priya Sharma";
 const ENQUIRY_PHONE = "9052996536"; // allowlisted: the WhatsApp is real
 const WALKIN_PHONE = "6304085246"; // allowlisted second phone
@@ -56,10 +56,15 @@ const CURSOR = `
   new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: true });
 })();`;
 
-async function moveTo(page, locator) {
+// Where the cursor went and when, so the video's camera can follow it.
+let marks = null;
+const mark = (kind, b) => marks?.push({ t: Date.now() / 1000, kind, x: b.x, y: b.y, w: b.width, h: b.height });
+
+async function moveTo(page, locator, kind = "focus") {
   await locator.scrollIntoViewIfNeeded();
   const b = await locator.boundingBox();
   if (!b) throw new Error("element not visible");
+  mark(kind, b);
   const x = b.x + Math.min(b.width / 2, 60), y = b.y + b.height / 2;
   await page.evaluate(([x, y]) => {
     const c = document.getElementById("__cur");
@@ -71,7 +76,7 @@ async function moveTo(page, locator) {
 }
 
 async function click(page, locator, pause = 350) {
-  const { x, y } = await moveTo(page, locator);
+  const { x, y } = await moveTo(page, locator, "click");
   await page.evaluate(([x, y]) => {
     const c = document.getElementById("__cur");
     c?.classList.add("press");
@@ -130,6 +135,7 @@ async function scene(name, { before, login, start, run }) {
   });
   await cdp.send("Page.startScreencast", { format: "jpeg", quality: 92, maxWidth: VIEW.width * SCALE, maxHeight: VIEW.height * SCALE, everyNthFrame: 1 });
   const t0 = Date.now() / 1000;
+  marks = [];
   await sleep(600);
   try {
     await run(page);
@@ -138,6 +144,12 @@ async function scene(name, { before, login, start, run }) {
     await cdp.send("Page.stopScreencast").catch(() => {});
     const t1 = Date.now() / 1000;
     await context.close();
+    const start = frames[0]?.t ?? t0;
+    writeFileSync(
+      path.join(OUT, `${name}.json`),
+      JSON.stringify({ width: VIEW.width, height: VIEW.height, duration: t1 - start, marks: (marks ?? []).map((m) => ({ ...m, t: +(m.t - start).toFixed(3) })) }),
+    );
+    marks = null;
     stitch(name, frames, t0, t1);
   }
 }
@@ -277,12 +289,71 @@ const SCENES = {
     start: "/analytics?days=30",
     run: async (page) => {
       await sleep(1000);
-      await type(page, page.getByLabel("Ask the assistant"), "How many patients did we see this month, and how much did we collect?", 28);
+      await type(page, page.getByLabel("Ask the assistant"), "What needs my attention today?", 28);
       await click(page, page.getByRole("button", { name: /Ask/ }).last(), 300);
       await page.locator(".pop-in").nth(1).waitFor({ timeout: 45000 });
       await sleep(4500);
       await smoothScroll(page, 700, 2500);
       await sleep(1500);
+    },
+  },
+
+  // Chronic care: who is due, who was reminded.
+  care: {
+    login: "Admin",
+    start: "/care",
+    run: async (page) => {
+      await sleep(1200);
+      await moveTo(page, page.getByText("Due this week").first());
+      await sleep(900);
+      await moveTo(page, page.locator("tbody tr").first().locator("td").nth(4));
+      await sleep(1500);
+      await smoothScroll(page, 260, 1600);
+      await moveTo(page, page.locator("tbody tr").nth(3).locator("td").nth(3));
+      await sleep(1400);
+      await click(page, page.getByRole("link", { name: "Overdue", exact: true }), 300);
+      await sleep(2600);
+    },
+  },
+
+  // Lab reports: ready, patient told, abnormal flagged.
+  labs: {
+    login: "Admin",
+    start: "/labs",
+    run: async (page) => {
+      await sleep(1200);
+      await moveTo(page, page.getByText("Abnormal", { exact: true }).first());
+      await sleep(1600);
+      await moveTo(page, page.getByText("WhatsApp sent").first());
+      await sleep(1600);
+      await moveTo(page, page.getByRole("button", { name: "Mark reviewed" }).first());
+      await sleep(1200);
+    },
+  },
+
+  // No-show recovery and the rest of the follow-ups.
+  followups: {
+    login: "Admin",
+    start: "/follow-ups",
+    run: async (page) => {
+      await sleep(1200);
+      await moveTo(page, page.getByText("Recovered").first());
+      await sleep(1500);
+      await smoothScroll(page, 300, 1800);
+      await sleep(1500);
+    },
+  },
+
+  // The owner's morning summary.
+  reports: {
+    login: "Admin",
+    start: "/reports",
+    run: async (page) => {
+      await sleep(1200);
+      const card = page.getByText("Daily summary").first();
+      await card.scrollIntoViewIfNeeded();
+      await moveTo(page, card);
+      await sleep(4000);
     },
   },
 

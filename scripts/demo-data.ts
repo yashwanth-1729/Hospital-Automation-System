@@ -174,11 +174,20 @@ async function pastSlot(ctx: Ctx, departmentId: string, when: Date): Promise<{ s
 async function generateLead(ctx: Ctx, day: string, hospitalName: string) {
   const correlationId = newCorrelationId(new Date(`${day}T06:00:00Z`));
   const source = weightedSource();
-  const enquiryAt = istAt(day, intBetween(8, 21), intBetween(0, 59));
+  const now = Date.now();
+  // Today only has the enquiries that have already come in.
+  let enquiryAt = istAt(day, intBetween(8, 21), intBetween(0, 59));
+  if (enquiryAt.getTime() > now - 10 * 60_000) {
+    const open = istAt(day, 8, 0).getTime();
+    if (now - 10 * 60_000 <= open) return false;
+    enquiryAt = new Date(open + Math.floor(Math.random() * (now - 10 * 60_000 - open)));
+  }
+  // Anything older than a day and a half has been dealt with by the front desk.
+  const recent = enquiryAt.getTime() > now - 36 * 3600_000;
   const consent = chance(0.92);
   const patient = await makePatient(ctx, consent);
 
-  const goesToReview = chance(0.12);
+  const goesToReview = chance(0.07);
   const departmentId = goesToReview ? pick(DEMO_DEPARTMENTS).id : pick(DEMO_DEPARTMENTS).id;
   const enquiryText = goesToReview ? pick(REVIEW_ENQUIRIES) : pick(ENQUIRIES[departmentId]!);
   const departmentName = DEMO_DEPARTMENTS.find((d) => d.id === departmentId)!.name;
@@ -190,8 +199,9 @@ async function generateLead(ctx: Ctx, day: string, hospitalName: string) {
   const inPast = visitDay < istDateString();
   const visitAt = istAt(visitDay, intBetween(10, 17), chance(0.5) ? 0 : 30);
 
-  const slot = goesToReview || !inPast ? null : await pastSlot(ctx, departmentId, visitAt);
-  const status = goesToReview ? "needs_review" : slot ? "booked" : "no_slot";
+  // Past visits and upcoming ones both get a real slot; a busy doctor means "no slot", which is rare.
+  const slot = goesToReview || chance(0.03) ? null : await pastSlot(ctx, departmentId, visitAt);
+  const status = goesToReview ? (recent ? "needs_review" : "closed") : slot ? "booked" : recent ? "no_slot" : "closed";
 
   await ctx.client.query(
     `INSERT INTO leads (lead_id, patient_id, idempotency_key, correlation_id, source, enquiry_text, department_requested,
@@ -221,10 +231,10 @@ async function generateLead(ctx: Ctx, day: string, hospitalName: string) {
         newId("EXC"), leadId,
         goesToReview ? "NEEDS_HUMAN_REVIEW" : "NO_SLOT_AVAILABLE",
         new Date(enquiryAt.getTime() + 4 * 3600_000),
-        chance(0.8) ? "resolved" : "open",
+        recent ? "open" : "resolved",
         goesToReview ? `Enquiry from ${patient.name} needs a person to decide.` : `No slot on ${visitDay} for ${patient.name}.`,
         `demo-lead-review:${leadId}`, correlationId, enquiryAt,
-        chance(0.8) ? new Date(enquiryAt.getTime() + intBetween(20, 200) * 60_000) : null,
+        recent ? null : new Date(enquiryAt.getTime() + intBetween(20, 200) * 60_000),
         "Front desk called the patient.",
       ],
     );
@@ -235,13 +245,16 @@ async function generateLead(ctx: Ctx, day: string, hospitalName: string) {
         at: respondedAt, correlationId,
       });
     }
-    return;
+    return true;
   }
 
-  // Booked: confirmation, reminders, attendance.
+  // Booked: confirmation, reminders, attendance. Upcoming visits are still waiting for the day.
   const appointmentId = newId("APT");
-  const attended = chance(0.83);
+  const upcoming = !inPast;
+  const attended = chance(0.86);
   const attendanceAt = new Date(visitAt.getTime() + 45 * 60_000);
+  const reminder24 = visitAt.getTime() - 24 * 3600_000 < now ? new Date(visitAt.getTime() - 24 * 3600_000) : null;
+  const reminder3 = visitAt.getTime() - 3 * 3600_000 < now ? new Date(visitAt.getTime() - 3 * 3600_000) : null;
   await ctx.client.query(
     `INSERT INTO appointments (appointment_id, patient_id, lead_id, department_id, doctor_id, slot_id, slot_start, slot_end,
                                status, attendance_status, reminder_24h_at, reminder_3h_at, attendance_marked_at,
@@ -249,11 +262,11 @@ async function generateLead(ctx: Ctx, day: string, hospitalName: string) {
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'booked', $9, $10, $11, $12, $13, $14, $15, $15)`,
     [
       appointmentId, patient.id, leadId, departmentId, slot.doctorId, slot.slotId, visitAt, slot.end,
-      attended ? "attended" : "no_show",
-      new Date(visitAt.getTime() - 24 * 3600_000),
-      new Date(visitAt.getTime() - 3 * 3600_000),
-      attendanceAt,
-      chance(0.5) ? "staff" : "system",
+      upcoming ? "pending" : attended ? "attended" : "no_show",
+      reminder24,
+      reminder3,
+      upcoming ? null : attendanceAt,
+      upcoming ? null : chance(0.5) ? "staff" : "system",
       correlationId, respondedAt,
     ],
   );
@@ -267,22 +280,26 @@ async function generateLead(ctx: Ctx, day: string, hospitalName: string) {
       body: `Hello ${patient.name}, your appointment at ${hospitalName} is confirmed.\nDepartment: ${departmentName}\nDoctor: ${slot.doctorName}\nDate & time: ${formatSlot(visitAt)}\nBooking ID: ${appointmentId}\nPlease arrive 15 minutes early.`,
       at: respondedAt, correlationId,
     });
-    await logMessage(ctx, {
-      patientId: patient.id, recipient: patient.phone, template: "APPT_REMINDER_01", workflow: "HOSPITAL | 02 Appointment",
-      body: `Reminder: ${patient.name}, you have an appointment at ${hospitalName} with ${slot.doctorName} on ${formatSlot(visitAt)}.`,
-      at: new Date(visitAt.getTime() - 24 * 3600_000), correlationId,
-    });
+    if (reminder24) {
+      await logMessage(ctx, {
+        patientId: patient.id, recipient: patient.phone, template: "APPT_REMINDER_01", workflow: "HOSPITAL | 02 Appointment",
+        body: `Reminder: ${patient.name}, you have an appointment at ${hospitalName} with ${slot.doctorName} on ${formatSlot(visitAt)}.`,
+        at: reminder24, correlationId,
+      });
+    }
   }
+  if (upcoming) return true;
 
   if (!attended) {
     await generateNoShowRecovery(ctx, { patient, appointmentId, correlationId, attendanceAt, doctorName: slot.doctorName, departmentName, hospitalName, consent });
-    return;
+    return true;
   }
 
   // Some attended visits were inpatient stays that end in a discharge.
   if (chance(0.3)) {
     await generateDischarge(ctx, { patient, departmentId, departmentName, correlationId, dischargedAt: new Date(attendanceAt.getTime() + 2 * 3600_000), hospitalName, consent });
   }
+  return true;
 }
 
 async function generateNoShowRecovery(
@@ -405,15 +422,14 @@ export async function generateDemoData(connectionString: string, days = 30) {
 
     const today = istDateString();
     let leads = 0;
-    for (let i = days; i >= 1; i--) {
+    for (let i = days; i >= 0; i--) {
       const day = addDays(today, -i);
       const weekday = new Date(`${day}T12:00:00+05:30`).getUTCDay();
       if (weekday === 0) continue; // OPD closed on Sundays
       const count = intBetween(4, 11) + (weekday === 6 ? 2 : 0);
       await client.query("BEGIN");
       for (let n = 0; n < count; n++) {
-        await generateLead(ctx, day, hospitalName);
-        leads++;
+        if (await generateLead(ctx, day, hospitalName)) leads++;
       }
       await client.query("COMMIT");
     }
@@ -443,6 +459,15 @@ export async function generateDemoData(connectionString: string, days = 30) {
 
   // Chronic care plans and lab follow-ups for the demo patients.
   await generateCareDemo(connectionString);
+
+  // A well-run front desk: older items have been dealt with; only the last day and a half is open.
+  const tidy = new pg.Client({ connectionString });
+  await tidy.connect();
+  await tidy.query(
+    `UPDATE exceptions SET status = 'resolved', resolved_at = created_at + interval '3 hours', resolution_note = 'Handled by the front desk.'
+      WHERE status = 'open' AND created_at < now() - interval '36 hours' AND error_type NOT IN ('CARE_OVERDUE', 'LAB_ABNORMAL', 'LAB_REVIEW_OVERDUE')`,
+  );
+  await tidy.end();
 }
 
 if (process.argv[1]?.endsWith("demo-data.ts")) {

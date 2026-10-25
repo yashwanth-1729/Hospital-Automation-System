@@ -11,19 +11,22 @@ const VOICES = {
 };
 
 // One tone cue per passage, as the ElevenLabs guide recommends. Ellipses carry the pauses.
-export const SCRIPT = `[calm, serious, measured] Every day... clinics lose patients in the gaps. A missed call. A forgotten booking. A bill that takes too long.
+// General pitch for any doctor or hospital owner. "H.M.S." is spelled out so it is read as letters.
+export const SCRIPT = `[calm, measured] Every hospital works hard to treat its patients. But between visits... patients quietly slip away. A missed call. A follow-up nobody made. A report nobody chased.
 
-[warm, confident] This is Clevo. One system that runs the whole clinic... and keeps every patient informed, on WhatsApp.
+[warm, confident] Clevo fixes that. It's an A.I. layer that plugs into the H.M.S. you already use... and handles patient follow-up on WhatsApp, automatically.
 
-[clear, assured] A patient books online. Within seconds, WhatsApp confirms the appointment. No one typed a word.
+[clear, upbeat] When a patient enquires, Clevo replies in seconds... books the appointment... and sends the reminders, so fewer patients miss their visit.
 
-[serious, reassuring] The doctor sees the full history. And if a medicine clashes with an allergy... Clevo stops it, before it ever reaches the patient.
+[steady, assured] Between visits, it keeps care on track. Diabetic and blood pressure patients are reminded before every review. Lab reports reach patients the moment they're ready. And when someone misses an appointment, Clevo offers the next open slot... and brings them back.
 
-[brisk, upbeat] One click at the pharmacy hands over the medicine, and builds the bill. The receipt lands on the patient's phone.
+[serious, reassuring] Anything that needs a person goes straight to the doctor, or your front desk. Nothing falls through the cracks.
 
-[curious, lighter] And the people who run the clinic? They can simply ask Clevo... and get answers from live data.
+[confident] No H.M.S. yet? Clevo can run the whole clinic. Reception, consultation, pharmacy and billing... with allergy checks, and bills that build themselves.
 
-[sincere, inspiring] Clevo is live today, built here by a young local team. We're asking for one thing: a pilot in our city's clinics. [warm, proud] Faster, safer care... closer to every patient.`;
+[warm, lighter] And for you, every morning, a sixty-second summary of your hospital... and an assistant you can simply ask.
+
+[sincere, inspiring] Clevo is built, and live today. Let's set it up for your hospital... and let the results speak.`;
 
 async function take(name, n) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICES[name]}/with-timestamps?output_format=mp3_44100_128`, {
@@ -33,7 +36,7 @@ async function take(name, n) {
   });
   if (!res.ok) throw new Error(`${name}: ${res.status} ${await res.text()}`);
   const data = await res.json();
-  const file = `public/vo/${name}-${n}`;
+  const file = `public/vo/${process.env.TAG ?? "v3"}-${name}-${n}`;
   writeFileSync(`${file}.mp3`, Buffer.from(data.audio_base64, "base64"));
   writeFileSync(`${file}.json`, JSON.stringify(data.normalized_alignment ?? data.alignment));
   const a = data.alignment;

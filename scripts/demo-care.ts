@@ -66,7 +66,7 @@ export async function generateCareDemo(connectionString: string): Promise<void> 
         [newId("CRP"), p.patient_id, condition, interval, last, next, reminders, remindedAt, chance(0.7) ? "hms" : "clevo", newCorrelationId(), `${last}T11:00:00+05:30`],
       );
       plans++;
-      if (bucket === "overdue" && daysToDue <= -14 && chance(0.6)) {
+      if (bucket === "overdue" && daysToDue <= -14 && chance(0.3)) {
         await client.query(
           `INSERT INTO exceptions (exception_id, workflow_name, record_id, error_type, severity, owner, due_at, summary, dedupe_key)
            VALUES ($1, 'HOSPITAL | 05 Clinical Care', $2, 'CARE_OVERDUE', 'medium', 'front_desk', now() + interval '4 hours', $3, $4)`,
